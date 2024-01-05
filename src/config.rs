@@ -3,11 +3,11 @@ pub struct Config {
     pub contents: ConfigContents
 }
 
-struct ConfigContents {
+pub struct ConfigContents {
     pub core: CoreContents
 }
 
-struct CoreContents {
+pub struct CoreContents {
     pub repository_format_version: i8,
     pub filemode: bool,
     pub bare: bool

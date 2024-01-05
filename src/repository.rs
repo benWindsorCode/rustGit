@@ -29,7 +29,7 @@ impl Repository {
         let config_file = repo_file(&repository, vec![String::from("config")], false).unwrap();
         let mut config = Config::new(config_file.clone());
 
-        let config_path = Path::new(&config_file.clone());
+        let config_path = Path::new(&config_file);
         if config_path.exists() {
             //read config
         } else if !force {
