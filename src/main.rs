@@ -11,7 +11,8 @@ struct Args {
 #[derive(Debug)]
 enum Commands {
     Add,
-    Commit
+    Commit,
+    Init
 }
 
 fn main() {
