@@ -70,7 +70,7 @@ impl Repository {
         repo.create_dirs()?;
         repo.create_description()?;
         repo.create_head()?;
-        repo.create_config()?;
+        repo.conf.write()?;
 
         Ok(repo)
     }
@@ -108,12 +108,5 @@ impl Repository {
         let file_name = repo_file(&self, vec![String::from("HEAD")], false)?;
 
         fs::write(file_name, "ref: refs/heads/master\n").or_else(|_| Err("Failed to write to HEAD file"))
-    }
-
-    fn create_config(&self) -> Result<(), &'static str> {
-        let file_name = repo_file(&self, vec![String::from("config")], false)?;
-
-        let config_json = serde_json::to_string(&self.conf).unwrap();
-        fs::write(file_name, config_json).or_else(|_| Err("Failed to write to config file"))
     }
 }

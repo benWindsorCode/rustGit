@@ -1,6 +1,8 @@
+use std::fs;
 use serde::{Deserialize, Serialize};
+use crate::repository::Repository;
+use crate::utils::repo_file;
 
-#[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
     path: String,
     pub contents: ConfigContents
@@ -25,6 +27,16 @@ impl Config {
         };
 
         Config { path, contents: config_contents }
+    }
+
+    pub fn write(&self) -> Result<(), &'static str> {
+        let config_json = serde_json::to_string(&self.contents).unwrap();
+        fs::write(&self.path, config_json).or_else(|_| Err("Failed to write to config file"))
+    }
+
+    pub fn read(&mut self) -> Result<(), &'static str> {
+        // fs::read_to_string(&self.path).and_then(|data| serde_json::from_str(data.as_str())?).or_else(|_| Err("Failed to read config file"))
+        todo!("Implement config read")
     }
 }
 
