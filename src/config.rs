@@ -1,12 +1,17 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
     path: String,
     pub contents: ConfigContents
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ConfigContents {
     pub core: CoreContents
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CoreContents {
     pub repository_format_version: i8,
     pub filemode: bool,

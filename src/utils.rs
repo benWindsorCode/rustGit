@@ -40,10 +40,9 @@ pub fn repo_dir(repository: &Repository, path: Vec<String>, mkdir: bool) -> Opti
 
     if mkdir {
         create_dir_all(path_obj).unwrap();
-        return Some(String::from(path_obj.to_str().unwrap()));
     }
 
-    None
+    Some(String::from(path_obj.to_str().unwrap()))
 }
 
 ///
@@ -51,5 +50,7 @@ pub fn repo_dir(repository: &Repository, path: Vec<String>, mkdir: bool) -> Opti
 pub fn repo_file(repository: &Repository, path: Vec<String>, mkdir: bool) -> Result<String, &'static str> {
     path.split_last().and_then(|(_, rest)| {
         repo_dir(&repository, rest.to_vec(), mkdir)
+    }).and_then(|_| {
+        Some(repo_path(&repository, path))
     }).ok_or("Failed to run repo_file")
 }
