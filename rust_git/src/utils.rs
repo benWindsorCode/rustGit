@@ -7,10 +7,10 @@ use crate::repository::Repository;
 /// within the gitdir of the rpo
 ///
 /// ```
-/// use rustGit::repository::Repository;
+/// use rust_git::repository::Repository;
 /// let repo = Repository { worktree: String::from(""), gitdir: String::from("git\\path") };
 /// let path = vec![String::from("test"), String::from("test2")];
-/// assert_eq!(rustGit::utils::repo_path(&repo, path), String::from("git\\path\\test\\test2"))
+/// assert_eq!(rust_git::utils::repo_path(&repo, path), String::from("git\\path\\test\\test2"))
 /// ```
 ///
 pub fn repo_path(repository: &Repository, path: Vec<String>) -> String {

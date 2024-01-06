@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use rustGit::repository::Repository;
+use rust_git::repository::Repository;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -21,5 +21,5 @@ fn main() {
 
     println!("{:?}", cli.command);
 
-    Repository::create(String::from("C:\\Users\\benja\\Documents\\code\\rustGit2\\test")).unwrap();
+    Repository::create(String::from("C:\\Users\\benja\\Documents\\code\\rustGit\\test")).unwrap();
 }
