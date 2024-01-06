@@ -1,13 +1,13 @@
 use std::fs;
 use std::fs::{create_dir_all, metadata};
-use std::path::Path;
-use crate::config::Config;
+use std::path::{Path, PathBuf};
+use crate::config::{Config, ConfigContents};
 use crate::utils::{repo_dir, repo_file};
 
 pub struct Repository {
     pub worktree: String,
     pub gitdir: String,
-    conf: Config
+    pub conf: Config
 }
 
 impl Repository {
@@ -28,21 +28,17 @@ impl Repository {
         };
 
         let config_file = repo_file(&repository, vec![String::from("config")], false).unwrap();
-        let config = Config::new(config_file.clone());
+        let mut config = Config::new(config_file.clone());
 
         let config_path = Path::new(&config_file);
         if config_path.exists() {
-            //read config
+            config.read().unwrap();
         } else if !force {
-            panic!("Configuration file missing")
+            panic!("Configuration file missing");
         }
 
         if !force {
-            let version = config.contents.core.repository_format_version;
-
-            if version != 0 {
-                panic!("Unsupported repository_format_version {}", version);
-            }
+            repository.version_check(&config.contents);
         }
 
         repository.conf = config;
@@ -73,6 +69,41 @@ impl Repository {
         repo.conf.write()?;
 
         Ok(repo)
+    }
+
+    pub fn find(path: String, required: bool) -> Result<Self, &'static str> {
+        let mut path_obj = PathBuf::from(&path);
+
+        path_obj.push(".git");
+
+        if path_obj.is_dir() {
+            return Ok(Repository::new(path.clone(), false))
+        };
+
+        // push off the .git
+        path_obj.pop();
+
+        // now we are at the parent
+        path_obj.pop();
+
+        // TODO: this seemed to cause a stack overflow, in case no git dir at all, investigate
+        if path_obj == Path::new("/") {
+            if required {
+                panic!("No git directory.")
+            } else {
+                return Err("Couldnt locate git directory in path")
+            }
+        }
+
+        return Repository::find(String::from(path_obj.to_str().unwrap()), required);
+    }
+
+    fn version_check(&self, config_contents: &ConfigContents) {
+        let version = config_contents.core.repository_format_version;
+
+        if version != 0 {
+            panic!("Unsupported repository_format_version {}", version);
+        }
     }
 
     fn create_dirs(&self) -> Result<(), &'static str> {

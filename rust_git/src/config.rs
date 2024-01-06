@@ -33,8 +33,14 @@ impl Config {
     }
 
     pub fn read(&mut self) -> Result<(), &'static str> {
-        // fs::read_to_string(&self.path).and_then(|data| serde_json::from_str(data.as_str())?).or_else(|_| Err("Failed to read config file"))
-        todo!("Implement config read")
+        let data = match fs::read_to_string(&self.path) {
+            Ok(data) => data,
+            Err(e) => return Err("Failed to read config")
+        };
+
+        let contents: ConfigContents = serde_json::from_str(data.as_str()).unwrap();
+        self.contents = contents;
+        Ok(())
     }
 }
 
