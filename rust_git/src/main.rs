@@ -1,7 +1,4 @@
-use clap::{Parser, Subcommand};
 use rust_git::cli::Cli;
-use rust_git::repository::Repository;
-
 
 fn main() {
     let cli = Cli::new();

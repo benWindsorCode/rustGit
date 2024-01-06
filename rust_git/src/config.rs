@@ -1,7 +1,5 @@
 use std::fs;
 use serde::{Deserialize, Serialize};
-use crate::repository::Repository;
-use crate::utils::repo_file;
 
 pub struct Config {
     path: String,
