@@ -1,6 +1,8 @@
-pub trait GitWriteable {
-    fn serialize(&self);
-    fn deserialize(&self);
+use bytes::Bytes;
+
+pub trait GitWriteable<T> {
+    fn serialize(&self, data: T);
+    fn deserialize(&self, data: Bytes) -> T;
 }
 
 pub enum GitObject {
