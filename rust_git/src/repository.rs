@@ -2,7 +2,7 @@ use std::fs;
 use std::fs::{create_dir_all, metadata};
 use std::path::{Path, PathBuf};
 use crate::config::{Config, ConfigContents};
-use crate::utils::{repo_dir, repo_file};
+use crate::file_utils::{repo_dir, repo_file};
 
 pub struct Repository {
     pub worktree: String,

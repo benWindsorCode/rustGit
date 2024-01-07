@@ -1,5 +1,6 @@
 pub mod repository;
-pub mod utils;
+pub mod file_utils;
+pub mod object_utils;
 pub mod config;
 pub mod cli;
-mod git_object;
+pub mod git_object;
