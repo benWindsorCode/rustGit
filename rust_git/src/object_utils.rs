@@ -95,3 +95,7 @@ pub fn object_write(obj: GitObject, repo_option: Option<Repository>) -> Result<S
 
     Ok(sha)
 }
+
+pub fn object_find(repo: &Repository, name: &String, format: &String, follow: bool) -> String {
+    name.to_owned()
+}
