@@ -31,12 +31,18 @@ pub fn object_read(repo: &Repository, sha: String) -> Result<GitObject, &'static
 
     let format_loc_index = bytes.iter().position(|&b| b == b' ').ok_or("Couldnt locate format locator byte")?;
     let format = &bytes.as_ref()[..format_loc_index];
-    let rest = &bytes.as_ref()[format_loc_index..];
+    // Add 1 to strip out the space
+    let rest = &bytes.as_ref()[format_loc_index+1..];
 
     let size_loc_index = rest.iter().position(|&b| b == b'\x00').ok_or("Couldnt locate size locator byte")?;
-    let size = &rest.as_ref()[..size_loc_index];
-    let size = String::from_utf8(size.to_vec()).map(|size_str| size_str.parse::<usize>().unwrap()).unwrap();
-    let data = &rest.as_ref()[size_loc_index..];
+
+    // TODO: handle the unwrap here more elegantly?
+    // Get the size as bytes, turn it into the right char, and parse this into a usize
+    let size_raw = &rest.as_ref()[..size_loc_index];
+    let size: usize = String::from_utf8(size_raw.to_vec()).unwrap().parse().unwrap();
+
+    // Add 1 to account for the null byte
+    let data = &rest.as_ref()[size_loc_index+1..];
 
     if size != data.len() {
         return Err("Data did not pass size validation");
@@ -49,6 +55,11 @@ pub fn object_read(repo: &Repository, sha: String) -> Result<GitObject, &'static
 }
 
 /// Given a GitObject, write it into the repo and return its sha hash
+///
+/// The object follows the pattern:
+/// [format][space char][object size][null byte][data]
+///
+/// Can be undone via the object_read function
 pub fn object_write(obj: GitObject, repo_option: Option<Repository>) -> Result<String, &'static str> {
     let data = match &obj {
         GitObject::Blob(blob) => blob.serialize(),

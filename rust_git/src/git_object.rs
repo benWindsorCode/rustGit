@@ -23,6 +23,7 @@ pub trait GitWriteable<T: GitWriteable<T>> {
     fn deserialize(data: Bytes) -> T;
 }
 
+#[derive(Debug)]
 pub enum GitObject {
     Commit(GitCommit),
     Tree(GitTree),
@@ -30,9 +31,19 @@ pub enum GitObject {
     Blob(GitBlob)
 }
 
+#[derive(Debug)]
 pub struct GitCommit {}
+
+#[derive(Debug)]
+
 pub struct GitTree {}
+
+#[derive(Debug)]
+
 pub struct GitTag {}
+
+#[derive(Debug)]
+
 pub struct GitBlob {
     pub data: Option<Bytes>
 }
