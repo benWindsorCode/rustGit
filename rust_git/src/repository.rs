@@ -1,4 +1,4 @@
-use std::fs;
+use std::{env, fs};
 use std::fs::{create_dir_all, metadata};
 use std::path::{Path, PathBuf};
 use crate::config::{Config, ConfigContents};
@@ -72,12 +72,20 @@ impl Repository {
     }
 
     pub fn find(path: String, required: bool) -> Result<Self, &'static str> {
-        let mut path_obj = PathBuf::from(&path);
+
+        // TODO: this is a hack to handle '.' base case/edge case, implement relative paths here as the Path/PathBuf doesnt
+        let mut path_to_search = path.clone();
+        if path_to_search == "." {
+            path_to_search = String::from(env::current_dir().unwrap().to_str().unwrap());
+        }
+
+        let mut path_obj = PathBuf::from(&path_to_search);
+        println!("Searching for repo in: {:?}", path_obj);
 
         path_obj.push(".git");
 
         if path_obj.is_dir() {
-            return Ok(Repository::new(path.clone(), false))
+            return Ok(Repository::new(path_to_search.clone(), false))
         };
 
         // push off the .git

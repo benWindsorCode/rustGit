@@ -16,11 +16,20 @@ enum Commands {
         #[arg(help="The path where the repo will be initiated")]
         path: String
     },
+    // TODO: cat file could take a path to help the repo search for testing purposes it would help
     CatFile {
         #[arg(help="The type of object: commit, blob etc.")]
         object_type: String,
         #[arg(help="The name of the object e.g. the sha hash (that is split to create dir structure")]
         object_name: String
+    },
+    HashObject {
+        #[arg(help="The type of object: commit, blob etc.")]
+        object_type: String,
+        #[arg(help="The path of the object to hash")]
+        object_path: String,
+        #[arg(help="If true, actually write the object")]
+        write: bool
     }
 }
 
@@ -45,7 +54,8 @@ impl Cli {
     fn process_command(&self, command: &Commands) {
         match command {
             Commands::Init { path } => self.process_init(path),
-            Commands::CatFile { object_type, object_name } => self.process_cat_file(object_type, object_name)
+            Commands::CatFile { object_type, object_name } => self.process_cat_file(object_type, object_name),
+            Commands::HashObject { object_type, object_path, write } => {}
         }
     }
 
@@ -62,5 +72,9 @@ impl Cli {
         let obj = object_read(&repo, obj_name).unwrap();
 
         println!("{:?}", obj);
+    }
+
+    fn process_hash_object(&self, object_type: &String, object_path: &String, write: &bool) {
+
     }
 }
