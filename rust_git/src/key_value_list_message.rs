@@ -3,7 +3,7 @@ use bytes::Bytes;
 
 #[derive(Debug, PartialEq)]
 pub struct KeyValuePairList {
-    pub data: HashMap<String, KeyValuePairEntry>,
+    pub data: HashMap<KeyValuePairKey, KeyValuePairEntry>,
     // pub key_list: Vec<String>
 }
 
@@ -25,10 +25,30 @@ impl KeyValuePairList {
         KeyValuePairList { data: HashMap::new() }
     }
 
+    pub fn insert_contents(&mut self, contents: Bytes) {
+        self.data.insert(KeyValuePairKey::Contents, KeyValuePairEntry::Singleton(contents));
+    }
 
-    // pub fn insert(&mut self, key: KeyValuePairKey, value: KeyValuePairEntry) {
-    //
-    // }
+    pub fn insert_pair(&mut self, key_string: String, val_to_add: Bytes) {
+        let key = KeyValuePairKey::Key(key_string);
+        if self.data.contains_key(&key) {
+            let val = self.data.get(&key).unwrap();
+
+            let updated_val = match val {
+                KeyValuePairEntry::Singleton(singleton_val) => {
+                    KeyValuePairEntry::List(vec![singleton_val.clone(), val_to_add])
+                },
+                KeyValuePairEntry::List(list_val) => {
+                    let mut list_val_to_update = list_val.clone();
+                    list_val_to_update.push(val_to_add);
+                    KeyValuePairEntry::List(list_val_to_update)
+                }
+            };
+            self.data.insert(key, updated_val);
+        } else {
+            self.data.insert(key, KeyValuePairEntry::Singleton(val_to_add));
+        }
+    }
 
     ///
     /// Parse key value pairs from input data.
@@ -41,7 +61,7 @@ impl KeyValuePairList {
     /// ```
     /// use std::collections::HashMap;
     /// use bytes::Bytes;
-    /// use rust_git::key_value_list_message::{KeyValuePairEntry, KeyValuePairList};
+    /// use rust_git::key_value_list_message::{KeyValuePairEntry, KeyValuePairKey, KeyValuePairList};
     /// let input = Bytes::from("firstkey firstvalue\nsecondkey secondvalue\n");
     ///
     /// let output = KeyValuePairList::from(input).unwrap();
@@ -49,8 +69,8 @@ impl KeyValuePairList {
     /// let value1 = Bytes::from("firstvalue");
     /// let value2 = Bytes::from("secondvalue");
     /// let mut expected_data_inner = HashMap::new();
-    /// expected_data_inner.insert(String::from("firstkey"), KeyValuePairEntry::Singleton(value1));
-    /// expected_data_inner.insert(String::from("secondkey"), KeyValuePairEntry::Singleton(value2));
+    /// expected_data_inner.insert(KeyValuePairKey::Key(String::from("firstkey")), KeyValuePairEntry::Singleton(value1));
+    /// expected_data_inner.insert(KeyValuePairKey::Key(String::from("secondkey")), KeyValuePairEntry::Singleton(value2));
     /// let expected_data = KeyValuePairList { data: expected_data_inner };
     /// assert_eq!(output, expected_data);
     /// ```
@@ -61,7 +81,7 @@ impl KeyValuePairList {
     /// ```
     /// use std::collections::HashMap;
     /// use bytes::Bytes;
-    /// use rust_git::key_value_list_message::{KeyValuePairEntry, KeyValuePairList};
+    /// use rust_git::key_value_list_message::{KeyValuePairEntry, KeyValuePairKey, KeyValuePairList};
     /// let input = Bytes::from("firstkey firstvalue\n continuation of value\n further continuation\nsecondkey secondvalue\n");
     ///
     /// let output = KeyValuePairList::from(input).unwrap();
@@ -69,13 +89,14 @@ impl KeyValuePairList {
     /// let value1 = Bytes::from("firstvalue\ncontinuation of value\nfurther continuation\n");
     /// let value2 = Bytes::from("secondvalue");
     /// let mut expected_data_inner = HashMap::new();
-    /// expected_data_inner.insert(String::from("firstkey"), KeyValuePairEntry::Singleton(value1));
-    /// expected_data_inner.insert(String::from("secondkey"), KeyValuePairEntry::Singleton(value2));
+    /// expected_data_inner.insert(KeyValuePairKey::Key(String::from("firstkey")), KeyValuePairEntry::Singleton(value1));
+    /// expected_data_inner.insert(KeyValuePairKey::Key(String::from("secondkey")), KeyValuePairEntry::Singleton(value2));
     /// let expected_data = KeyValuePairList { data: expected_data_inner };
     /// assert_eq!(output, expected_data);
     /// ```
     pub fn from(input: Bytes) -> Result<Self, &'static str> {
-        let mut data: HashMap<String, KeyValuePairEntry> = HashMap::new();
+        // let mut data: HashMap<String, KeyValuePairEntry> = HashMap::new();
+        let mut data = KeyValuePairList::new();
 
         let mut complete = false;
         let mut start = 0;
@@ -88,15 +109,13 @@ impl KeyValuePairList {
             println!("space_idx {:?}, newline_idx {:?}", space_idx, newline_idx);
 
             // TODO: cleanup dupe branches
-            // TODO: use option for none
             match (space_idx, newline_idx) {
                 (None, Some(newline)) => {
                     if newline != start {
                         return Err("Newline and start incompatible");
                     }
 
-                    let val_to_put = KeyValuePairEntry::Singleton(input_remaining.slice(start+1..));
-                    data.insert(String::from("NONE"), val_to_put);
+                    data.insert_contents(input_remaining.slice(start+1..));
                     complete = true;
                 },
                 (Some(space), Some(newline)) if newline < space => {
@@ -104,8 +123,7 @@ impl KeyValuePairList {
                     return Err("Newline and start incompatible");
                     }
 
-                    let val_to_put = KeyValuePairEntry::Singleton(input_remaining.slice(start+1..));
-                    data.insert(String::from("NONE"), val_to_put);
+                    data.insert_contents(input_remaining.slice(start+1..));
                     complete = true;
                 }
                 _ => { }
@@ -150,23 +168,7 @@ impl KeyValuePairList {
 
             println!("Found value string: {:?}", val_to_add);
 
-            if data.contains_key(&key_string) {
-                let val = data.get(&key_string).unwrap();
-
-                let updated_val = match val {
-                    KeyValuePairEntry::Singleton(singleton_val) => {
-                        KeyValuePairEntry::List(vec![singleton_val.clone(), val_to_add])
-                    },
-                    KeyValuePairEntry::List(list_val) => {
-                        let mut list_val_to_update = list_val.clone();
-                        list_val_to_update.push(val_to_add);
-                        KeyValuePairEntry::List(list_val_to_update)
-                    }
-                };
-                data.insert(key_string, updated_val);
-            } else {
-                data.insert(key_string, KeyValuePairEntry::Singleton(val_to_add));
-            }
+            data.insert_pair(key_string, val_to_add);
 
             start = end + 1;
 
@@ -183,19 +185,19 @@ impl KeyValuePairList {
             // TODO: the start needs updating by the offset or resetting to zero each time
         }
 
-        Ok(KeyValuePairList { data })
+        Ok(data)
     }
 
     ///
     /// ```
     /// use std::collections::HashMap;
     /// use bytes::Bytes;
-    /// use rust_git::key_value_list_message::{KeyValuePairEntry, KeyValuePairList};
+    /// use rust_git::key_value_list_message::{KeyValuePairEntry, KeyValuePairKey, KeyValuePairList};
     /// let value1 = Bytes::from("firstvalue");
     /// let value2 = Bytes::from("secondvalue");
     /// let mut input_data_inner = HashMap::new();
-    /// input_data_inner.insert(String::from("firstkey"), KeyValuePairEntry::Singleton(value1));
-    /// input_data_inner.insert(String::from("secondkey"), KeyValuePairEntry::Singleton(value2));
+    /// input_data_inner.insert(KeyValuePairKey::Key(String::from("firstkey")), KeyValuePairEntry::Singleton(value1));
+    /// input_data_inner.insert(KeyValuePairKey::Key(String::from("secondkey")), KeyValuePairEntry::Singleton(value2));
     /// let input_data = KeyValuePairList { data: input_data_inner };
     ///
     /// let output = input_data.into_string();
@@ -209,7 +211,7 @@ impl KeyValuePairList {
         let mut output = String::from("");
 
         for (key, value) in &self.data {
-            if key == "NONE" {
+            if key == &KeyValuePairKey::Contents {
                 continue;
             }
 
@@ -220,14 +222,14 @@ impl KeyValuePairList {
 
             // TODO: handle multi line values by replacing '\n' with '\n ' in val to write
             for val_to_write in vals_to_write {
-                let formatted_val_to_write = format!("{} {}\n", key, &val_to_write);
+                let formatted_val_to_write = format!("{:?} {}\n", key, &val_to_write);
                 output = format!("{}{}", output, formatted_val_to_write);
             }
 
             println!("Output is: {}", output);
         }
 
-        let contents = match &self.data.get("NONE") {
+        let contents = match &self.data.get(&KeyValuePairKey::Contents) {
             None => Bytes::from(""),
             Some(entry) => match entry {
                 KeyValuePairEntry::Singleton(entry_singleton) => entry_singleton,
