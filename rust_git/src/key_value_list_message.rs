@@ -4,7 +4,7 @@ use bytes::Bytes;
 #[derive(Debug, PartialEq)]
 pub struct KeyValuePairList {
     pub data: HashMap<KeyValuePairKey, KeyValuePairEntry>,
-    // pub key_list: Vec<String>
+    pub key_list: Vec<KeyValuePairKey>
 }
 
 #[derive(Debug, PartialEq)]
@@ -13,7 +13,7 @@ pub enum KeyValuePairEntry {
     List(Vec<Bytes>)
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum KeyValuePairKey {
     Contents,
     Key(String)
@@ -21,15 +21,18 @@ pub enum KeyValuePairKey {
 
 impl KeyValuePairList {
     pub fn new() -> Self {
-        // KeyValuePairList { data: HashMap::new(), key_list: Vec::new() }
-        KeyValuePairList { data: HashMap::new() }
+        KeyValuePairList { data: HashMap::new(), key_list: Vec::new() }
+        // KeyValuePairList { data: HashMap::new() }
     }
 
     pub fn insert_contents(&mut self, contents: Bytes) {
         self.data.insert(KeyValuePairKey::Contents, KeyValuePairEntry::Singleton(contents));
+        self.key_list.push(KeyValuePairKey::Contents);
     }
 
     pub fn insert_pair(&mut self, key_string: String, val_to_add: Bytes) {
+        // TODO: how to handle key ordering in case of adding into a list entry? do we move the key order to the end of the
+        //       list? or do we have a multiplicity 2 ordering and maintain that somehow?
         let key = KeyValuePairKey::Key(key_string);
         if self.data.contains_key(&key) {
             let val = self.data.get(&key).unwrap();
@@ -46,7 +49,8 @@ impl KeyValuePairList {
             };
             self.data.insert(key, updated_val);
         } else {
-            self.data.insert(key, KeyValuePairEntry::Singleton(val_to_add));
+            self.data.insert(key.clone(), KeyValuePairEntry::Singleton(val_to_add));
+            self.key_list.push(key.clone());
         }
     }
 
@@ -66,12 +70,14 @@ impl KeyValuePairList {
     ///
     /// let output = KeyValuePairList::from(input).unwrap();
     ///
+    /// let key1 = KeyValuePairKey::Key(String::from("firstkey"));
+    /// let key2 = KeyValuePairKey::Key(String::from("secondkey"));
     /// let value1 = Bytes::from("firstvalue");
     /// let value2 = Bytes::from("secondvalue");
     /// let mut expected_data_inner = HashMap::new();
-    /// expected_data_inner.insert(KeyValuePairKey::Key(String::from("firstkey")), KeyValuePairEntry::Singleton(value1));
-    /// expected_data_inner.insert(KeyValuePairKey::Key(String::from("secondkey")), KeyValuePairEntry::Singleton(value2));
-    /// let expected_data = KeyValuePairList { data: expected_data_inner };
+    /// expected_data_inner.insert(key1.clone(), KeyValuePairEntry::Singleton(value1));
+    /// expected_data_inner.insert(key2.clone(), KeyValuePairEntry::Singleton(value2));
+    /// let expected_data = KeyValuePairList { data: expected_data_inner, key_list: vec![key1.clone(), key2.clone()] };
     /// assert_eq!(output, expected_data);
     /// ```
     ///
@@ -86,12 +92,14 @@ impl KeyValuePairList {
     ///
     /// let output = KeyValuePairList::from(input).unwrap();
     ///
-    /// let value1 = Bytes::from("firstvalue\ncontinuation of value\nfurther continuation\n");
+    /// let key1 = KeyValuePairKey::Key(String::from("firstkey"));
+    /// let key2 = KeyValuePairKey::Key(String::from("secondkey"));
+    /// let value1 = Bytes::from("firstvalue\ncontinuation of value\nfurther continuation");
     /// let value2 = Bytes::from("secondvalue");
     /// let mut expected_data_inner = HashMap::new();
-    /// expected_data_inner.insert(KeyValuePairKey::Key(String::from("firstkey")), KeyValuePairEntry::Singleton(value1));
-    /// expected_data_inner.insert(KeyValuePairKey::Key(String::from("secondkey")), KeyValuePairEntry::Singleton(value2));
-    /// let expected_data = KeyValuePairList { data: expected_data_inner };
+    /// expected_data_inner.insert(key1.clone(), KeyValuePairEntry::Singleton(value1));
+    /// expected_data_inner.insert(key2.clone(), KeyValuePairEntry::Singleton(value2));
+    /// let expected_data = KeyValuePairList { data: expected_data_inner, key_list: vec![key1, key2] };
     /// assert_eq!(output, expected_data);
     /// ```
     pub fn from(input: Bytes) -> Result<Self, &'static str> {
@@ -159,7 +167,7 @@ impl KeyValuePairList {
             }
 
             // note the end+1 in python the end is inclusive, in rust we have to make it inclusive by adding 1
-            let val_to_add = input_remaining.slice(space_idx+1..end+1);
+            let val_to_add = input_remaining.slice(space_idx+1..end);
 
             let formatted_val_to_add = String::from_utf8(val_to_add.to_vec()).unwrap();
             let formatted_val_to_add = formatted_val_to_add.replace("\n ", "\n");
@@ -193,12 +201,14 @@ impl KeyValuePairList {
     /// use std::collections::HashMap;
     /// use bytes::Bytes;
     /// use rust_git::key_value_list_message::{KeyValuePairEntry, KeyValuePairKey, KeyValuePairList};
+    /// let key1 = KeyValuePairKey::Key(String::from("firstkey"));
+    /// let key2 = KeyValuePairKey::Key(String::from("secondkey"));
     /// let value1 = Bytes::from("firstvalue");
     /// let value2 = Bytes::from("secondvalue");
     /// let mut input_data_inner = HashMap::new();
-    /// input_data_inner.insert(KeyValuePairKey::Key(String::from("firstkey")), KeyValuePairEntry::Singleton(value1));
-    /// input_data_inner.insert(KeyValuePairKey::Key(String::from("secondkey")), KeyValuePairEntry::Singleton(value2));
-    /// let input_data = KeyValuePairList { data: input_data_inner };
+    /// input_data_inner.insert(key1.clone(), KeyValuePairEntry::Singleton(value1));
+    /// input_data_inner.insert(key2.clone(), KeyValuePairEntry::Singleton(value2));
+    /// let input_data = KeyValuePairList { data: input_data_inner, key_list: vec![key1, key2] };
     ///
     /// let output = input_data.into_string();
     /// let expected = "firstkey firstvalue\nsecondkey secondvalue\n";
@@ -210,10 +220,13 @@ impl KeyValuePairList {
         // TODO: the implementation needs to be ordered on insertion order ideally to preserve the output every time
         let mut output = String::from("");
 
-        for (key, value) in &self.data {
-            if key == &KeyValuePairKey::Contents {
-                continue;
-            }
+        for key in &self.key_list {
+            let formatted_key = match key {
+                KeyValuePairKey::Contents => continue,
+                KeyValuePairKey::Key(key) => key
+            };
+
+            let value = self.data.get(&key).unwrap();
 
             let vals_to_write = match value {
                 KeyValuePairEntry::Singleton(value_single) => vec![String::from_utf8(value_single.to_vec()).unwrap()],
@@ -222,7 +235,7 @@ impl KeyValuePairList {
 
             // TODO: handle multi line values by replacing '\n' with '\n ' in val to write
             for val_to_write in vals_to_write {
-                let formatted_val_to_write = format!("{:?} {}\n", key, &val_to_write);
+                let formatted_val_to_write = format!("{} {}\n", formatted_key, &val_to_write);
                 output = format!("{}{}", output, formatted_val_to_write);
             }
 
