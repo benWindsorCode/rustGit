@@ -75,6 +75,6 @@ impl Cli {
     }
 
     fn process_hash_object(&self, object_type: &String, object_path: &String, write: &bool) {
-        todo!("Hash object cli not implemented yet");
+        todo!("Hash object cli not implemented yet, called for {} {} {}", object_type, object_path, write);
     }
 }

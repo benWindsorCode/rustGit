@@ -1,6 +1,7 @@
 use std::fs;
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug)]
 pub struct Config {
     path: String,
     pub contents: ConfigContents

@@ -7,8 +7,9 @@ use crate::repository::Repository;
 /// within the gitdir of the rpo
 ///
 /// ```
+/// use rust_git::config::Config;
 /// use rust_git::repository::Repository;
-/// let repo = Repository { worktree: String::from(""), gitdir: String::from("git\\path") };
+/// let repo = Repository { worktree: String::from(""), gitdir: String::from("git\\path"), conf: Config::new(String::from("dummy/path")) };
 /// let path = vec![String::from("test"), String::from("test2")];
 /// assert_eq!(rust_git::file_utils::repo_path(&repo, path), String::from("git\\path\\test\\test2"))
 /// ```

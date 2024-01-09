@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use crate::config::{Config, ConfigContents};
 use crate::file_utils::{repo_dir, repo_file};
 
+#[derive(Debug)]
 pub struct Repository {
     pub worktree: String,
     pub gitdir: String,

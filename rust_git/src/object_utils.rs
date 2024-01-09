@@ -97,5 +97,6 @@ pub fn object_write(obj: GitObject, repo_option: Option<Repository>) -> Result<S
 }
 
 pub fn object_find(repo: &Repository, name: &String, format: &String, follow: bool) -> String {
+    println!("Running object_find for {:?}, {} {} {}", repo, name, format, follow);
     name.to_owned()
 }

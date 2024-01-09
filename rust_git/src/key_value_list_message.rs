@@ -22,7 +22,6 @@ pub enum KeyValuePairKey {
 impl KeyValuePairList {
     pub fn new() -> Self {
         KeyValuePairList { data: HashMap::new(), key_list: Vec::new() }
-        // KeyValuePairList { data: HashMap::new() }
     }
 
     pub fn insert_contents(&mut self, contents: Bytes) {
@@ -107,10 +106,9 @@ impl KeyValuePairList {
         let mut data = KeyValuePairList::new();
 
         let mut complete = false;
-        let mut start = 0;
         let mut input_remaining = input.clone();
         while !complete {
-            start = 0;
+            let mut start = 0;
             let space_idx = input_remaining.iter().position(|&b| b == b' ');
             let newline_idx = input_remaining.iter().position(|&b| b == b'\n');
 
@@ -185,12 +183,8 @@ impl KeyValuePairList {
             }
 
             // TODO: in python impl the initial space and nl find starts at start and returns -1 if fail
-            //       in rust I need to update this to work by updating teh data to search
+            //       in rust I need to update this to work by updating the data to search
             input_remaining = input_remaining.slice(start..);
-
-            // TODO: turn the key into an emum of Option<String> for the empty case
-
-            // TODO: the start needs updating by the offset or resetting to zero each time
         }
 
         Ok(data)
