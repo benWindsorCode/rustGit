@@ -5,8 +5,11 @@ use rust_git::object_utils::{object_read, object_write};
 use rust_git::repository::Repository;
 
 fn main() {
-    let cli = Cli::new();
-    cli.run();
+    use rust_git::key_value_list_message::{KeyValuePairEntry, KeyValuePairList};
+    let input = Bytes::from("firstkey firstvalue\n continuation of value\n further continuation\nsecondkey secondvalue\n");
+    let output = KeyValuePairList::from(input).unwrap();
+    // let cli = Cli::new();
+    // cli.run();
 
     // Repository::find(String::from("."), true);
     // let repo = Repository::find(String::from("C:\\Users\\benja\\Documents\\code\\my_git_test"), false).unwrap();

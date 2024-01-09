@@ -3,7 +3,8 @@ use bytes::Bytes;
 
 #[derive(Debug, PartialEq)]
 pub struct KeyValuePairList {
-    pub data: HashMap<String, KeyValuePairEntry>
+    pub data: HashMap<String, KeyValuePairEntry>,
+    // pub key_list: Vec<String>
 }
 
 #[derive(Debug, PartialEq)]
@@ -12,10 +13,22 @@ pub enum KeyValuePairEntry {
     List(Vec<Bytes>)
 }
 
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub enum KeyValuePairKey {
+    Contents,
+    Key(String)
+}
+
 impl KeyValuePairList {
     pub fn new() -> Self {
+        // KeyValuePairList { data: HashMap::new(), key_list: Vec::new() }
         KeyValuePairList { data: HashMap::new() }
     }
+
+
+    // pub fn insert(&mut self, key: KeyValuePairKey, value: KeyValuePairEntry) {
+    //
+    // }
 
     ///
     /// Parse key value pairs from input data.
@@ -34,6 +47,26 @@ impl KeyValuePairList {
     /// let output = KeyValuePairList::from(input).unwrap();
     ///
     /// let value1 = Bytes::from("firstvalue");
+    /// let value2 = Bytes::from("secondvalue");
+    /// let mut expected_data_inner = HashMap::new();
+    /// expected_data_inner.insert(String::from("firstkey"), KeyValuePairEntry::Singleton(value1));
+    /// expected_data_inner.insert(String::from("secondkey"), KeyValuePairEntry::Singleton(value2));
+    /// let expected_data = KeyValuePairList { data: expected_data_inner };
+    /// assert_eq!(output, expected_data);
+    /// ```
+    ///
+    /// Multi line values are supported by adding spaces at the start of a line, where these get stripped out when
+    /// we parse the continued value
+    /// e.g.:
+    /// ```
+    /// use std::collections::HashMap;
+    /// use bytes::Bytes;
+    /// use rust_git::key_value_list_message::{KeyValuePairEntry, KeyValuePairList};
+    /// let input = Bytes::from("firstkey firstvalue\n continuation of value\n further continuation\nsecondkey secondvalue\n");
+    ///
+    /// let output = KeyValuePairList::from(input).unwrap();
+    ///
+    /// let value1 = Bytes::from("firstvalue\ncontinuation of value\nfurther continuation\n");
     /// let value2 = Bytes::from("secondvalue");
     /// let mut expected_data_inner = HashMap::new();
     /// expected_data_inner.insert(String::from("firstkey"), KeyValuePairEntry::Singleton(value1));
@@ -92,21 +125,28 @@ impl KeyValuePairList {
             let mut end = start;
             loop {
                 let to_search = input_remaining.slice(end+1..);
-                end = to_search.iter().position(|&b| b == b'\n').unwrap();
+                println!("searching {}", String::from_utf8(to_search.to_vec()).unwrap());
 
-                if to_search.get(end+1) == None {
+                // find the nearest newline starting from the end of last search (but adding back the offset so that we count correctly)
+                end = input_remaining.iter().skip(end+1).position(|&b| b == b'\n').unwrap() + end + 1;
+
+                if input_remaining.get(end+1) == None {
                     break;
                 }
 
-                println!("Comparing {} to {}", *to_search.get(end+1).unwrap(), b' ');
-                if *to_search.get(end+1).unwrap() != b' ' {
+                println!("Comparing {} to {}", *input_remaining.get(end+1).unwrap(), b' ');
+                if *input_remaining.get(end+1).unwrap() != b' ' {
                     break;
                 }
             }
 
-            // TODO: add code to drop leading space on continuations e.g. replace(b'\n ', b'\n')
             // note the end+1 in python the end is inclusive, in rust we have to make it inclusive by adding 1
             let val_to_add = input_remaining.slice(space_idx+1..end+1);
+
+            let formatted_val_to_add = String::from_utf8(val_to_add.to_vec()).unwrap();
+            let formatted_val_to_add = formatted_val_to_add.replace("\n ", "\n");
+
+            let val_to_add = Bytes::from(formatted_val_to_add);
 
             println!("Found value string: {:?}", val_to_add);
 
@@ -128,7 +168,7 @@ impl KeyValuePairList {
                 data.insert(key_string, KeyValuePairEntry::Singleton(val_to_add));
             }
 
-            start = end + 1 + 1;
+            start = end + 1;
 
             if start == input_remaining.len() {
                 complete = true;
