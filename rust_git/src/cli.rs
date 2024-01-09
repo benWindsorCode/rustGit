@@ -55,7 +55,7 @@ impl Cli {
         match command {
             Commands::Init { path } => self.process_init(path),
             Commands::CatFile { object_type, object_name } => self.process_cat_file(object_type, object_name),
-            Commands::HashObject { object_type, object_path, write } => {}
+            Commands::HashObject { object_type, object_path, write } => self.process_hash_object(object_type, object_path, write)
         }
     }
 
@@ -75,6 +75,6 @@ impl Cli {
     }
 
     fn process_hash_object(&self, object_type: &String, object_path: &String, write: &bool) {
-
+        todo!("Hash object cli not implemented yet");
     }
 }

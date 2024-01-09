@@ -18,6 +18,13 @@ impl KeyValuePairList {
     }
 
     ///
+    /// Parse key value pairs from input data.
+    ///
+    /// New lines separate entries.
+    /// New line followed by a space is a continuation of the previous entry.
+    /// A space separates the key and value.
+    ///
+    /// e.g.:
     /// ```
     /// use std::collections::HashMap;
     /// use bytes::Bytes;
@@ -48,6 +55,7 @@ impl KeyValuePairList {
             println!("space_idx {:?}, newline_idx {:?}", space_idx, newline_idx);
 
             // TODO: cleanup dupe branches
+            // TODO: use option for none
             match (space_idx, newline_idx) {
                 (None, Some(newline)) => {
                     if newline != start {
@@ -136,5 +144,61 @@ impl KeyValuePairList {
         }
 
         Ok(KeyValuePairList { data })
+    }
+
+    ///
+    /// ```
+    /// use std::collections::HashMap;
+    /// use bytes::Bytes;
+    /// use rust_git::key_value_list_message::{KeyValuePairEntry, KeyValuePairList};
+    /// let value1 = Bytes::from("firstvalue");
+    /// let value2 = Bytes::from("secondvalue");
+    /// let mut input_data_inner = HashMap::new();
+    /// input_data_inner.insert(String::from("firstkey"), KeyValuePairEntry::Singleton(value1));
+    /// input_data_inner.insert(String::from("secondkey"), KeyValuePairEntry::Singleton(value2));
+    /// let input_data = KeyValuePairList { data: input_data_inner };
+    ///
+    /// let output = input_data.into_string();
+    /// let expected = "firstkey firstvalue\nsecondkey secondvalue\n";
+    /// assert_eq!(output, expected);
+    /// ```
+    ///
+    ///
+    pub fn into_string(&self) -> String {
+        // TODO: the implementation needs to be ordered on insertion order ideally to preserve the output every time
+        let mut output = String::from("");
+
+        for (key, value) in &self.data {
+            if key == "NONE" {
+                continue;
+            }
+
+            let vals_to_write = match value {
+                KeyValuePairEntry::Singleton(value_single) => vec![String::from_utf8(value_single.to_vec()).unwrap()],
+                KeyValuePairEntry::List(value_list) => value_list.iter().map(|inner| String::from_utf8(inner.to_vec()).unwrap()).collect()
+            };
+
+            // TODO: handle multi line values by replacing '\n' with '\n ' in val to write
+            for val_to_write in vals_to_write {
+                let formatted_val_to_write = format!("{} {}\n", key, &val_to_write);
+                output = format!("{}{}", output, formatted_val_to_write);
+            }
+
+            println!("Output is: {}", output);
+        }
+
+        let contents = match &self.data.get("NONE") {
+            None => Bytes::from(""),
+            Some(entry) => match entry {
+                KeyValuePairEntry::Singleton(entry_singleton) => entry_singleton,
+                KeyValuePairEntry::List(_) => panic!("Doesnt handle list of content yet")
+            }.clone()
+        };
+
+        if contents.len() > 0 {
+            output = format!("{}\n{}\n", output, String::from_utf8(contents.to_vec()).unwrap());
+        }
+
+        String::from(output)
     }
 }

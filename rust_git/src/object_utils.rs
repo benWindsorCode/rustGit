@@ -3,7 +3,7 @@ use std::path::Path;
 use bytes::{BufMut, Bytes, BytesMut};
 use sha1::{Digest, Sha1};
 use crate::file_utils::repo_file;
-use crate::git_object::{GitBlob, GitCommit, GitObject, GitWriteable};
+use crate::git_object::{GitBlob, GitObject, GitWriteable};
 use crate::repository::Repository;
 
 /// Parse a git object given the sha hash of the file
@@ -88,7 +88,7 @@ pub fn object_write(obj: GitObject, repo_option: Option<Repository>) -> Result<S
         let path_obj = Path::new(&path);
 
         if !path_obj.exists() {
-            fs::write(path, output_data);
+            fs::write(path, output_data).unwrap();
         }
 
     }

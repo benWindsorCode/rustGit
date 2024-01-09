@@ -35,7 +35,7 @@ impl Config {
     pub fn read(&mut self) -> Result<(), &'static str> {
         let data = match fs::read_to_string(&self.path) {
             Ok(data) => data,
-            Err(e) => return Err("Failed to read config")
+            Err(_) => return Err("Failed to read config")
         };
 
         let contents: ConfigContents = serde_json::from_str(data.as_str()).unwrap();
