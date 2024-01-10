@@ -1,4 +1,5 @@
 use bytes::Bytes;
+use crate::key_value_list_message::{KeyValuePairKey, KeyValuePairList};
 
 pub trait GitWriteable<T: GitWriteable<T>> {
 
@@ -32,7 +33,9 @@ pub enum GitObject {
 }
 
 #[derive(Debug)]
-pub struct GitCommit {}
+pub struct GitCommit {
+    pub data: KeyValuePairList
+}
 
 #[derive(Debug)]
 
@@ -63,5 +66,23 @@ impl GitWriteable<GitBlob> for GitBlob {
 
     fn deserialize(data: Bytes) -> GitBlob {
         GitBlob { data: Some(data) }
+    }
+}
+
+impl GitWriteable<GitCommit> for GitCommit {
+    fn new() -> GitCommit {
+        GitCommit { data: KeyValuePairList::new() }
+    }
+
+    fn format_name() -> String {
+        String::from("commit")
+    }
+
+    fn serialize(&self) -> Bytes {
+        self.data.into_bytes()
+    }
+
+    fn deserialize(data: Bytes) -> GitCommit {
+        GitCommit { data: KeyValuePairList::from(data).unwrap() }
     }
 }
