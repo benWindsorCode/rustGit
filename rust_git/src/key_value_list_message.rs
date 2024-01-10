@@ -87,7 +87,7 @@ impl KeyValuePairList {
     /// use std::collections::HashMap;
     /// use bytes::Bytes;
     /// use rust_git::key_value_list_message::{KeyValuePairEntry, KeyValuePairKey, KeyValuePairList};
-    /// let input = Bytes::from("firstkey firstvalue\n continuation of value\n further continuation\nsecondkey secondvalue\n");
+    /// let input = Bytes::from("firstkey firstvalue\n continuation of value\n further continuation\nsecondkey secondvalue\n\ncontents here");
     ///
     /// let output = KeyValuePairList::from(input).unwrap();
     ///
@@ -95,10 +95,12 @@ impl KeyValuePairList {
     /// let key2 = KeyValuePairKey::Key(String::from("secondkey"));
     /// let value1 = Bytes::from("firstvalue\ncontinuation of value\nfurther continuation");
     /// let value2 = Bytes::from("secondvalue");
+    /// let value3 = Bytes::from("contents here");
     /// let mut expected_data_inner = HashMap::new();
     /// expected_data_inner.insert(key1.clone(), KeyValuePairEntry::Singleton(value1));
     /// expected_data_inner.insert(key2.clone(), KeyValuePairEntry::Singleton(value2));
-    /// let expected_data = KeyValuePairList { data: expected_data_inner, key_list: vec![key1, key2] };
+    /// expected_data_inner.insert(KeyValuePairKey::Contents, KeyValuePairEntry::Singleton(value3));
+    /// let expected_data = KeyValuePairList { data: expected_data_inner, key_list: vec![key1, key2, KeyValuePairKey::Contents] };
     /// assert_eq!(output, expected_data);
     /// ```
     pub fn from(input: Bytes) -> Result<Self, &'static str> {
@@ -126,7 +128,7 @@ impl KeyValuePairList {
                 },
                 (Some(space), Some(newline)) if newline < space => {
                     if newline != start {
-                    return Err("Newline and start incompatible");
+                        return Err("Newline and start incompatible");
                     }
 
                     data.insert_contents(input_remaining.slice(start+1..));
@@ -184,6 +186,7 @@ impl KeyValuePairList {
 
             // TODO: in python impl the initial space and nl find starts at start and returns -1 if fail
             //       in rust I need to update this to work by updating the data to search
+            //       or using the .iter().skip(n) trick
             input_remaining = input_remaining.slice(start..);
         }
 
@@ -191,21 +194,26 @@ impl KeyValuePairList {
     }
 
     ///
+    /// The reverse of KeyValuePairList::from, taking a key value pair list and converting
+    /// it back to a string ready to be saved to a file
     /// ```
     /// use std::collections::HashMap;
     /// use bytes::Bytes;
     /// use rust_git::key_value_list_message::{KeyValuePairEntry, KeyValuePairKey, KeyValuePairList};
     /// let key1 = KeyValuePairKey::Key(String::from("firstkey"));
     /// let key2 = KeyValuePairKey::Key(String::from("secondkey"));
-    /// let value1 = Bytes::from("firstvalue");
+    /// let key3 = KeyValuePairKey::Contents;
+    /// let value1 = Bytes::from("firstvalue\ncontinued first value");
     /// let value2 = Bytes::from("secondvalue");
+    /// let value3 = Bytes::from("and now the contents");
     /// let mut input_data_inner = HashMap::new();
     /// input_data_inner.insert(key1.clone(), KeyValuePairEntry::Singleton(value1));
     /// input_data_inner.insert(key2.clone(), KeyValuePairEntry::Singleton(value2));
-    /// let input_data = KeyValuePairList { data: input_data_inner, key_list: vec![key1, key2] };
+    /// input_data_inner.insert(key3.clone(), KeyValuePairEntry::Singleton(value3));
+    /// let input_data = KeyValuePairList { data: input_data_inner, key_list: vec![key1, key2, key3] };
     ///
     /// let output = input_data.into_string();
-    /// let expected = "firstkey firstvalue\nsecondkey secondvalue\n";
+    /// let expected = "firstkey firstvalue\n continued first value\nsecondkey secondvalue\n\nand now the contents\n";
     /// assert_eq!(output, expected);
     /// ```
     ///
@@ -227,9 +235,8 @@ impl KeyValuePairList {
                 KeyValuePairEntry::List(value_list) => value_list.iter().map(|inner| String::from_utf8(inner.to_vec()).unwrap()).collect()
             };
 
-            // TODO: handle multi line values by replacing '\n' with '\n ' in val to write
             for val_to_write in vals_to_write {
-                let formatted_val_to_write = format!("{} {}\n", formatted_key, &val_to_write);
+                let formatted_val_to_write = format!("{} {}\n", formatted_key, &val_to_write.replace("\n", "\n "));
                 output = format!("{}{}", output, formatted_val_to_write);
             }
 
@@ -249,5 +256,9 @@ impl KeyValuePairList {
         }
 
         String::from(output)
+    }
+
+    pub fn into_bytes(&self) -> Bytes {
+        Bytes::from(self.into_string())
     }
 }
