@@ -1,5 +1,6 @@
 use bytes::Bytes;
-use crate::key_value_list_message::{KeyValuePairKey, KeyValuePairList};
+use serde::{Deserialize, Serialize};
+use crate::key_value_list_message::{KeyValuePairList};
 
 pub trait GitWriteable<T: GitWriteable<T>> {
 
@@ -37,9 +38,18 @@ pub struct GitCommit {
     pub data: KeyValuePairList
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GitTree {
+    items: Vec<GitLeaf>
+}
 
-pub struct GitTree {}
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GitLeaf {
+    mode: String,
+    path: String,
+    sha: String,
+    sort_key: String
+}
 
 #[derive(Debug)]
 
@@ -84,5 +94,24 @@ impl GitWriteable<GitCommit> for GitCommit {
 
     fn deserialize(data: Bytes) -> GitCommit {
         GitCommit { data: KeyValuePairList::from(data).unwrap() }
+    }
+}
+
+impl GitWriteable<GitTree> for GitTree {
+    fn new() -> GitTree {
+        GitTree { items: Vec::new() }
+    }
+
+    fn format_name() -> String {
+        String::from("tree")
+    }
+
+    fn serialize(&self) -> Bytes {
+        // TODO: sort by leaf keys before serialize
+        Bytes::from(serde_json::to_string(self).unwrap())
+    }
+
+    fn deserialize(data: Bytes) -> GitTree {
+        serde_json::from_str(&String::from_utf8(data.to_vec()).unwrap()).unwrap()
     }
 }
