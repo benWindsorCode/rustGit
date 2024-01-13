@@ -23,9 +23,7 @@ pub fn repo_path(repository: &Repository, path: Vec<String>) -> String {
     String::from(path_obj.to_str().unwrap())
 }
 
-///
 /// Given a repo and a path to a dir inside the gitdir, create the directory if it doesnt exist
-///
 pub fn repo_dir(repository: &Repository, path: Vec<String>, mkdir: bool) -> Option<String> {
     let path_name = repo_path(repository, path);
 
@@ -46,7 +44,6 @@ pub fn repo_dir(repository: &Repository, path: Vec<String>, mkdir: bool) -> Opti
     Some(String::from(path_obj.to_str().unwrap()))
 }
 
-///
 /// Given a repository and a path inside the gitdir, create the path to file if it doesnt exist
 pub fn repo_file(repository: &Repository, path: Vec<String>, mkdir: bool) -> Result<String, &'static str> {
     path.split_last().and_then(|(_, rest)| {

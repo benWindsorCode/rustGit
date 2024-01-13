@@ -61,6 +61,7 @@ impl Cli {
     }
 
     fn process_command(&self, command: &Commands) {
+        // TODO: each command should return a Result<(), String> so that we can then gracefully centralise error handling/printing to user
         match command {
             Commands::Init { path } => self.process_init(path),
             Commands::CatFile { object_type, object_name } => self.process_cat_file(object_type, object_name),

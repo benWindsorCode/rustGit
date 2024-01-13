@@ -1,6 +1,12 @@
 use std::collections::HashMap;
 use bytes::Bytes;
 
+/// Git configs are made up of a custom (de)serialisable key value pair structure
+/// see https://wyag.thb.lt/#org860ffdc from the 'Write You A Git' tutorial
+///
+/// Ultimately I could/should have just used serde to avoid the mess below which is a lot of fiddly byte
+/// parsing and file parsing logic for no real gain, but its faithful to the tutorial and the git implementation
+/// so it felt worth doing at the time
 #[derive(Debug, PartialEq)]
 pub struct KeyValuePairList {
     pub data: HashMap<KeyValuePairKey, KeyValuePairEntry>,

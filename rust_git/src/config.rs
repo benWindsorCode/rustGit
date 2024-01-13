@@ -39,9 +39,10 @@ impl Config {
             Err(_) => return Err("Failed to read config")
         };
 
-        let contents: ConfigContents = serde_json::from_str(data.as_str()).unwrap();
-        self.contents = contents;
-        Ok(())
+        serde_json::from_str(data.as_str()).and_then(|contents| {
+            self.contents = contents;
+            Ok(())
+        }).or_else(|_| Err("unable to load config"))
     }
 }
 

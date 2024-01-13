@@ -7,9 +7,12 @@ use crate::key_value_list_message::{KeyValuePairEntry, KeyValuePairKey, KeyValue
 use crate::object_utils::object_read;
 use crate::repository::Repository;
 
+/// The GitWriteable trait represents an object which can be serialised and deserialised.
+/// This could have been avoided by directly using serdes traits but it was more in the spirit of the tutorial
+/// to create our own format for the key value pair structure of the commits even though ultimately it was not needed
 pub trait GitWriteable<T: GitWriteable<T>> {
 
-    // Always create a new object, if provided data deserialise it else just make an empty object
+    /// Always create a new object, if provided data deserialise it else just make an empty object
     fn from(data: Option<Bytes>) -> T {
         match data {
             None => T::new(),
@@ -17,16 +20,15 @@ pub trait GitWriteable<T: GitWriteable<T>> {
         }
     }
 
-    // Create an empty version of the object
+    /// Create an empty version of the object
     fn new() -> T;
 
     fn format_name() -> String;
 
-    // Take an object and turn it into bytes
-    // TODO: feels like T should be here somewhere? but I guess its handled by the generic definition as T is GitWriteable<T> recursively
+    /// Take an object and turn it into bytes
     fn serialize(&self) -> Bytes;
 
-    // Take in data and return an object of the right type
+    /// Take in data and return an object of the right type
     fn deserialize(data: Bytes) -> T;
 }
 
@@ -138,15 +140,20 @@ impl GitTree {
             let success= object_read(&repo, leaf.sha.clone()).map(|obj| {
                 match obj {
                     GitObject::Tree(tree) => {
-                        create_dir_all(&base_path).unwrap();
-                        tree.checkout(&repo, &base_path);
+                        create_dir_all(&base_path)
+                            .and_then(|_| Ok(tree.checkout(&repo, &base_path)))
+                            .or_else(|_| Err("Unable to process tree checkout"))
                     },
                     GitObject::Blob(blob) => {
-                        // TODO: chain these more elegantly to avoid all the unwraps
-                        create_dir_all(&base_path.parent().unwrap()).unwrap();
-                        fs::write(&base_path, blob.data.unwrap()).unwrap();
+                        &base_path.parent()
+                            .and_then(|parent| create_dir_all(parent).ok());
+
+                        blob.data
+                            .and_then(|data| fs::write(&base_path, data).ok());
+
+                        Ok(())
                     },
-                    _ => {}
+                    _ => Err("Unsupported object found in checkout")
                 }
             }).is_ok();
 

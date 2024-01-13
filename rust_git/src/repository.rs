@@ -75,6 +75,7 @@ impl Repository {
     pub fn find(path: String, required: bool) -> Result<Self, &'static str> {
 
         // TODO: this is a hack to handle '.' base case/edge case, implement relative paths here as the Path/PathBuf doesnt
+        //         I suspect I need to use this https://doc.rust-lang.org/std/fs/fn.canonicalize.html
         let mut path_to_search = path.clone();
         if path_to_search == "." {
             path_to_search = String::from(env::current_dir().unwrap().to_str().unwrap());

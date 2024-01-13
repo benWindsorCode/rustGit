@@ -50,7 +50,14 @@ pub fn object_read(repo: &Repository, sha: String) -> Result<GitObject, &'static
 
     match std::str::from_utf8(format) {
         Ok("blob") => Ok(GitObject::Blob(GitBlob::deserialize(Bytes::from(data.to_owned())))),
-        _ => Err("Unrecognised format")
+        Ok("commit") => Ok(GitObject::Commit(GitCommit::deserialize(Bytes::from(data.to_owned())))),
+        Ok("tree") => Ok(GitObject::Tree(GitTree::deserialize(Bytes::from(data.to_owned())))),
+        Ok(other) => {
+            // TODO: work out how to get the 'other' string into the Err message without issues of 'value referencing data owned by the current function'
+            println!("ERROR: unable to parse format: {}", other);
+            Err("Unable to parse format, see logs for details")
+        },
+        _ => Err("Unable to parse format")
     }
 }
 
