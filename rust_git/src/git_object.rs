@@ -1,6 +1,11 @@
+use std::fs;
+use std::fs::create_dir_all;
+use std::path::{Path, PathBuf};
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
-use crate::key_value_list_message::{KeyValuePairList};
+use crate::key_value_list_message::{KeyValuePairEntry, KeyValuePairKey, KeyValuePairList};
+use crate::object_utils::object_read;
+use crate::repository::Repository;
 
 pub trait GitWriteable<T: GitWriteable<T>> {
 
@@ -45,10 +50,10 @@ pub struct GitTree {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GitLeaf {
-    mode: String,
-    path: String,
-    sha: String,
-    sort_key: String
+    pub mode: String,
+    pub path: String,
+    pub sha: String,
+    pub sort_key: String
 }
 
 #[derive(Debug)]
@@ -94,6 +99,66 @@ impl GitWriteable<GitCommit> for GitCommit {
 
     fn deserialize(data: Bytes) -> GitCommit {
         GitCommit { data: KeyValuePairList::from(data).unwrap() }
+    }
+}
+
+impl GitCommit {
+    pub fn get_tree_string(&self) -> Option<String> {
+        let tree_entry = match self.data.get(KeyValuePairKey::Key("tree".to_string())) {
+            None => return None,
+            Some(entry) => entry
+        };
+
+        match tree_entry {
+            KeyValuePairEntry::Singleton(tree) => return Some(String::from_utf8(tree.to_vec()).unwrap()),
+            KeyValuePairEntry::List(_) => panic!("Tree of type list not supported")
+        }
+    }
+
+    pub fn get_and_read_tree(&self, repo: &Repository) -> Result<GitTree, &'static str> {
+        self.get_tree_string()
+            .ok_or("Tree not found")
+            .and_then(|tree_hash| object_read(&repo, tree_hash) )
+            .and_then(|obj| match obj {
+                GitObject::Tree(tree) => Ok(tree),
+                _ => Err("Non tree object found")
+            })
+    }
+}
+
+impl GitLeaf {
+}
+
+impl GitTree {
+    pub fn checkout(&self, repo: &Repository, path: &Path) {
+        for leaf in &self.items {
+            let mut base_path = PathBuf::from(path.clone());
+            base_path.push(&leaf.path);
+
+            let success= object_read(&repo, leaf.sha.clone()).map(|obj| {
+                match obj {
+                    GitObject::Tree(tree) => {
+                        create_dir_all(&base_path);
+                        tree.checkout(&repo, &base_path);
+                    },
+                    GitObject::Blob(blob) => {
+                        create_dir_all(&base_path.parent().unwrap());
+                        fs::write(&base_path, blob.data.unwrap()).unwrap();
+                    },
+                    _ => {}
+                }
+            }).is_ok();
+
+            if success {
+                println!("Sucesfully checkout file to {:?}", &base_path);
+            } else {
+                println!("ERROR: could not checkout file to {:?}", &base_path);
+            }
+        }
+    }
+
+    pub fn add(&mut self, git_leaf: GitLeaf) {
+        self.items.push(git_leaf);
     }
 }
 

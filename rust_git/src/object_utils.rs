@@ -60,7 +60,7 @@ pub fn object_read(repo: &Repository, sha: String) -> Result<GitObject, &'static
 /// [format][space char][object size][null byte][data]
 ///
 /// Can be undone via the object_read function
-pub fn object_write(obj: GitObject, repo_option: Option<Repository>) -> Result<String, &'static str> {
+pub fn object_write(obj: GitObject, repo_option: Option<&Repository>) -> Result<String, &'static str> {
     let data = match &obj {
         GitObject::Blob(blob) => blob.serialize(),
         _ => panic!("type unsupported")

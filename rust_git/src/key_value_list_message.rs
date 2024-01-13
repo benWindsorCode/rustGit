@@ -24,6 +24,10 @@ impl KeyValuePairList {
         KeyValuePairList { data: HashMap::new(), key_list: Vec::new() }
     }
 
+    pub fn get(&self, key: KeyValuePairKey) -> Option<&KeyValuePairEntry> {
+        self.data.get(&key)
+    }
+
     pub fn insert_contents(&mut self, contents: Bytes) {
         self.data.insert(KeyValuePairKey::Contents, KeyValuePairEntry::Singleton(contents));
         self.key_list.push(KeyValuePairKey::Contents);

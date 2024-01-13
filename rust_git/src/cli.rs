@@ -1,4 +1,8 @@
+use std::fs::{canonicalize, create_dir_all};
+use std::path::Path;
 use clap::{Parser, Subcommand};
+use crate::git_object::{GitCommit, GitTree};
+use crate::git_object::GitObject::Commit;
 use crate::object_utils::{object_find, object_read};
 use crate::repository::Repository;
 
@@ -30,6 +34,12 @@ enum Commands {
         object_path: String,
         #[arg(help="If true, actually write the object")]
         write: bool
+    },
+    Checkout {
+        #[arg(help="The commit or tree to checkout")]
+        commit: String,
+        #[arg(help="The EMPTY directory to checkout to")]
+        path: String
     }
 }
 
@@ -55,7 +65,8 @@ impl Cli {
         match command {
             Commands::Init { path } => self.process_init(path),
             Commands::CatFile { object_type, object_name } => self.process_cat_file(object_type, object_name),
-            Commands::HashObject { object_type, object_path, write } => self.process_hash_object(object_type, object_path, write)
+            Commands::HashObject { object_type, object_path, write } => self.process_hash_object(object_type, object_path, write),
+            Commands::Checkout { commit, path } => self.process_checkout(commit, path)
         }
     }
 
@@ -76,5 +87,38 @@ impl Cli {
 
     fn process_hash_object(&self, object_type: &String, object_path: &String, write: &bool) {
         todo!("Hash object cli not implemented yet, called for {} {} {}", object_type, object_path, write);
+    }
+
+    fn process_checkout(&self, commit: &String, path: &String) {
+        let path_obj = Path::new(path);
+
+        if path_obj.exists() {
+            if !path_obj.is_dir() {
+                println!("ERROR: Not a directory");
+                return;
+            }
+
+            if !path_obj.read_dir().unwrap().next().is_none() {
+                println!("ERROR: Directory not empty");
+                return;
+            }
+        } else {
+            create_dir_all(path_obj).unwrap();
+        }
+
+        let repo = Repository::find(String::from("."), true).unwrap();
+
+        // TODO: technically this should support directly checking out a tree too but...
+        let commit_obj_name = object_find(&repo, &commit, &"commit".to_string(), true);
+        let commit_obj = match object_read(&repo, commit_obj_name).unwrap() {
+            Commit(obj) => obj,
+            _ => {
+                println!("ERROR: Object not a commit");
+                return;
+            }
+        };
+
+        let tree_obj = commit_obj.get_and_read_tree(&repo).unwrap();
+        tree_obj.checkout(&repo, canonicalize(path_obj).unwrap().as_path());
     }
 }
