@@ -1,7 +1,6 @@
 use std::fs::{canonicalize, create_dir_all};
 use std::path::Path;
 use clap::{Parser, Subcommand};
-use crate::git_object::{GitCommit, GitTree};
 use crate::git_object::GitObject::Commit;
 use crate::object_utils::{object_find, object_read};
 use crate::repository::Repository;
@@ -89,7 +88,7 @@ impl Cli {
         todo!("Hash object cli not implemented yet, called for {} {} {}", object_type, object_path, write);
     }
 
-    fn process_checkout(&self, commit: &String, path: &String) {
+    pub fn process_checkout(&self, commit: &String, path: &String) {
         let path_obj = Path::new(path);
 
         if path_obj.exists() {

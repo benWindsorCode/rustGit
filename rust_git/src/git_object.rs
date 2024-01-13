@@ -43,12 +43,12 @@ pub struct GitCommit {
     pub data: KeyValuePairList
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GitTree {
     items: Vec<GitLeaf>
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GitLeaf {
     pub mode: String,
     pub path: String,
@@ -132,17 +132,18 @@ impl GitLeaf {
 impl GitTree {
     pub fn checkout(&self, repo: &Repository, path: &Path) {
         for leaf in &self.items {
-            let mut base_path = PathBuf::from(path.clone());
+            let mut base_path = PathBuf::from(path);
             base_path.push(&leaf.path);
 
             let success= object_read(&repo, leaf.sha.clone()).map(|obj| {
                 match obj {
                     GitObject::Tree(tree) => {
-                        create_dir_all(&base_path);
+                        create_dir_all(&base_path).unwrap();
                         tree.checkout(&repo, &base_path);
                     },
                     GitObject::Blob(blob) => {
-                        create_dir_all(&base_path.parent().unwrap());
+                        // TODO: chain these more elegantly to avoid all the unwraps
+                        create_dir_all(&base_path.parent().unwrap()).unwrap();
                         fs::write(&base_path, blob.data.unwrap()).unwrap();
                     },
                     _ => {}

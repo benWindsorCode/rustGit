@@ -1,11 +1,10 @@
-use std::path::Path;
 use bytes::Bytes;
-use rust_git::git_object::{GitBlob, GitLeaf, GitObject, GitTree, GitWriteable};
+use rust_git::git_object::{GitBlob, GitCommit, GitLeaf, GitObject, GitTree, GitWriteable};
+use rust_git::key_value_list_message::KeyValuePairList;
 use rust_git::object_utils::object_write;
 use rust_git::repository::Repository;
 
 fn main() {
-    Repository::find(String::from("."), true);
     let repo = Repository::find(String::from("C:\\Users\\benja\\Documents\\code\\my_git_test"), false).unwrap();
     println!("Repo opened - worktree '{}'\ngitdir '{}'\nconfig '{:?}'", repo.worktree, repo.gitdir, repo.conf.contents);
 
@@ -37,6 +36,14 @@ fn main() {
     tree.add(leaf_1);
     tree.add(leaf_2);
 
-    let checkout_path = Path::new("C:\\Users\\benja\\Documents\\code\\my_git_test\\checkout");
-    tree.checkout(&repo, checkout_path);
+    let tree_hash = object_write(GitObject::Tree(tree.clone()), Some(&repo)).unwrap();
+    println!("Saved tree to: {}", tree_hash.clone());
+
+    let mut commit_data = KeyValuePairList::new();
+    commit_data.insert_pair("tree".to_string(), Bytes::from(tree_hash));
+    commit_data.insert_contents(Bytes::from("My first commit message"));
+
+    let commit = GitCommit { data: commit_data };
+    let commit_hash = object_write(GitObject::Commit(commit), Some(&repo)).unwrap();
+    println!("Commit saved to: {}", commit_hash.clone());
 }

@@ -3,7 +3,7 @@ use std::path::Path;
 use bytes::{BufMut, Bytes, BytesMut};
 use sha1::{Digest, Sha1};
 use crate::file_utils::repo_file;
-use crate::git_object::{GitBlob, GitObject, GitWriteable};
+use crate::git_object::{GitBlob, GitCommit, GitObject, GitTree, GitWriteable};
 use crate::repository::Repository;
 
 /// Parse a git object given the sha hash of the file
@@ -63,11 +63,15 @@ pub fn object_read(repo: &Repository, sha: String) -> Result<GitObject, &'static
 pub fn object_write(obj: GitObject, repo_option: Option<&Repository>) -> Result<String, &'static str> {
     let data = match &obj {
         GitObject::Blob(blob) => blob.serialize(),
+        GitObject::Commit(commit) => commit.serialize(),
+        GitObject::Tree(tree) => tree.serialize(),
         _ => panic!("type unsupported")
     };
 
     let format = match &obj  {
         GitObject::Blob(_) => GitBlob::format_name(),
+        GitObject::Commit(_) => GitCommit::format_name(),
+        GitObject::Tree(_) => GitTree::format_name(),
         _ => panic!("type unsupported")
     };
 
