@@ -128,6 +128,7 @@ impl GitCommit {
     }
 }
 
+// TODO: create a ::new() function which automatically populates the leaf key on add
 impl GitLeaf {
 }
 
@@ -165,6 +166,7 @@ impl GitTree {
         }
     }
 
+    // TODO: Add should sort by the leaf key
     pub fn add(&mut self, git_leaf: GitLeaf) {
         self.items.push(git_leaf);
     }

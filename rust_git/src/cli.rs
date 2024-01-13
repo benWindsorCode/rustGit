@@ -61,21 +61,25 @@ impl Cli {
     }
 
     fn process_command(&self, command: &Commands) {
-        // TODO: each command should return a Result<(), String> so that we can then gracefully centralise error handling/printing to user
-        match command {
+        let result = match command {
             Commands::Init { path } => self.process_init(path),
             Commands::CatFile { object_type, object_name } => self.process_cat_file(object_type, object_name),
             Commands::HashObject { object_type, object_path, write } => self.process_hash_object(object_type, object_path, write),
             Commands::Checkout { commit, path } => self.process_checkout(commit, path)
+        };
+
+        match result {
+            Err(err) => println!("ERROR in command run: {}", err),
+            _ => {}
         }
     }
 
-    fn process_init(&self, path: &String) {
+    fn process_init(&self, path: &String) -> Result<(), &'static str> {
         println!("Running init on: {}", path.clone());
-        Repository::create(path.clone()).unwrap();
+        Repository::create(path.clone()).and_then(|_| Ok(()))
     }
 
-    fn process_cat_file(&self, object_type: &String, object_name: &String) {
+    fn process_cat_file(&self, object_type: &String, object_name: &String) -> Result<(), &'static str> {
         println!("Running cat file on {} {}", object_type.clone(), object_name.clone());
 
         let repo = Repository::find(String::from("."), true).unwrap();
@@ -83,24 +87,23 @@ impl Cli {
         let obj = object_read(&repo, obj_name).unwrap();
 
         println!("{:?}", obj);
+        Ok(())
     }
 
-    fn process_hash_object(&self, object_type: &String, object_path: &String, write: &bool) {
+    fn process_hash_object(&self, object_type: &String, object_path: &String, write: &bool) -> Result<(), &'static str> {
         todo!("Hash object cli not implemented yet, called for {} {} {}", object_type, object_path, write);
     }
 
-    pub fn process_checkout(&self, commit: &String, path: &String) {
+    pub fn process_checkout(&self, commit: &String, path: &String) -> Result<(), &'static str> {
         let path_obj = Path::new(path);
 
         if path_obj.exists() {
             if !path_obj.is_dir() {
-                println!("ERROR: Not a directory");
-                return;
+                return Err("Not a directory");
             }
 
             if !path_obj.read_dir().unwrap().next().is_none() {
-                println!("ERROR: Directory not empty");
-                return;
+                return Err("Directory not empty");
             }
         } else {
             create_dir_all(path_obj).unwrap();
@@ -113,12 +116,13 @@ impl Cli {
         let commit_obj = match object_read(&repo, commit_obj_name).unwrap() {
             Commit(obj) => obj,
             _ => {
-                println!("ERROR: Object not a commit");
-                return;
+                return Err("Object not a commit");
             }
         };
 
         let tree_obj = commit_obj.get_and_read_tree(&repo).unwrap();
         tree_obj.checkout(&repo, canonicalize(path_obj).unwrap().as_path());
+
+        Ok(())
     }
 }
