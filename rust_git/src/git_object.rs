@@ -146,7 +146,7 @@ impl GitTree {
                             .or_else(|_| Err("Unable to process tree checkout"))
                     },
                     GitObject::Blob(blob) => {
-                        &base_path.parent()
+                        let _ = &base_path.parent()
                             .and_then(|parent| create_dir_all(parent).ok());
 
                         blob.data
