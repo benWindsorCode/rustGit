@@ -3,6 +3,7 @@ use std::path::Path;
 use clap::{Parser, Subcommand};
 use crate::git_object::GitObject::Commit;
 use crate::object_utils::{object_find, object_read};
+use crate::refs::Ref;
 use crate::repository::Repository;
 
 #[derive(Parser)]
@@ -39,7 +40,8 @@ enum Commands {
         commit: String,
         #[arg(help="The EMPTY directory to checkout to")]
         path: String
-    }
+    },
+    ShowRef
 }
 
 pub struct Cli {
@@ -65,7 +67,8 @@ impl Cli {
             Commands::Init { path } => self.process_init(path),
             Commands::CatFile { object_type, object_name } => self.process_cat_file(object_type, object_name),
             Commands::HashObject { object_type, object_path, write } => self.process_hash_object(object_type, object_path, write),
-            Commands::Checkout { commit, path } => self.process_checkout(commit, path)
+            Commands::Checkout { commit, path } => self.process_checkout(commit, path),
+            Commands::ShowRef => self.process_show_ref()
         };
 
         match result {
@@ -122,6 +125,18 @@ impl Cli {
 
         let tree_obj = commit_obj.get_and_read_tree(&repo).unwrap();
         tree_obj.checkout(&repo, canonicalize(path_obj).unwrap().as_path());
+
+        Ok(())
+    }
+
+    fn process_show_ref(&self) -> Result<(), &'static str> {
+        let repo = Repository::find(String::from("."), true).unwrap();
+        let refs = Ref::all_refs(&repo);
+
+        for item in refs {
+            let resolution = item.fully_resolve(&repo);
+            println!("Ref: {}, Target: {:?}, resolves to {:?}", item.name, item.target, resolution);
+        }
 
         Ok(())
     }

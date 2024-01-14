@@ -9,8 +9,8 @@ use crate::repository::Repository;
 pub struct Ref {
     // name of the reference e.g. refs/feature/test123 or main
     // ultimately ends up as a path to a file inside the .git/refs directory
-    name: String,
-    target: Option<RefType>
+    pub name: String,
+    pub target: Option<RefType>
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -47,6 +47,7 @@ impl Ref {
                 continue;
             }
 
+            // TODO: load the ref file via serde so that the target is populated too rather than just the name
             file.path().strip_prefix(Path::new(&repo.gitdir))
                 .and_then(|path| {
                     let new_ref = Ref::new(path.to_str().unwrap().to_string());
@@ -100,7 +101,6 @@ impl Ref {
 
         match Ref::resolve_inner(name_to_resolve, repo) {
             RefType::Indirect(ref_name) => {
-                println!("Recursively resolving reference to: {}", ref_name);
                 let ref_chain = Ref::new(ref_name);
                 ref_chain.fully_resolve(repo)
             },

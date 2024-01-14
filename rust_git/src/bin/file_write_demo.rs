@@ -11,7 +11,7 @@ fn main() {
     let blob = GitBlob::deserialize(Bytes::from("This is some test data here"));
     let obj = GitObject::Blob(blob);
 
-    let sha = object_write(obj, Some(repo));
+    let sha = object_write(obj, Some(&repo));
     println!("Object written to {:?}", sha);
 
 }
