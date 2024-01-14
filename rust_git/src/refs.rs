@@ -1,7 +1,8 @@
 use std::fs;
 use std::path::Path;
 use serde::{Deserialize, Serialize};
-use crate::file_utils::repo_file;
+use walkdir::WalkDir;
+use crate::file_utils::{repo_dir, repo_file};
 use crate::repository::Repository;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -35,6 +36,26 @@ pub enum RefType {
 impl Ref {
     pub fn new(name: String) -> Self {
         Ref { name, target: None }
+    }
+
+    pub fn all_refs(repo: &Repository) -> Vec<Ref> {
+        let path = repo_dir(&repo, vec!["refs".to_string()], false).unwrap();
+
+        let mut result = Vec::new();
+        for file in WalkDir::new(path).into_iter().filter_map(|file| file.ok()) {
+            if !file.metadata().unwrap().is_file() {
+                continue;
+            }
+
+            file.path().strip_prefix(Path::new(&repo.gitdir))
+                .and_then(|path| {
+                    let new_ref = Ref::new(path.to_str().unwrap().to_string());
+                    result.push(new_ref);
+                    Ok(())
+                }).unwrap();
+        }
+
+        result
     }
 
     pub fn add_target(&mut self, target: RefType) {

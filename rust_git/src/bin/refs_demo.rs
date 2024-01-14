@@ -20,4 +20,6 @@ fn main() {
 
     let resolved_2 = reference_2.fully_resolve(&repo);
     println!("reference_2 resolved to: {:?}", resolved_2);
+
+    println!("Running refs search, found: {:?}", Ref::all_refs(&repo) );
 }
