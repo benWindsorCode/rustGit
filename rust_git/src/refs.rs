@@ -38,6 +38,12 @@ impl Ref {
         Ref { name, target: None }
     }
 
+    // TODO: this should return a Result<Ref, String> and make the error handling cleaner
+    pub fn from_file(name: String, repo: &Repository) -> Self {
+        let path = repo_file(repo, vec![name.clone()], false).map_err(|e| e.to_string()).unwrap();
+        fs::read(path).and_then(|data| Ok(serde_json::from_slice(&data).unwrap())).unwrap()
+    }
+
     pub fn all_refs(repo: &Repository) -> Vec<Ref> {
         let path = repo_dir(&repo, vec!["refs".to_string()], false).unwrap();
 
@@ -50,7 +56,8 @@ impl Ref {
             // TODO: load the ref file via serde so that the target is populated too rather than just the name
             file.path().strip_prefix(Path::new(&repo.gitdir))
                 .and_then(|path| {
-                    let new_ref = Ref::new(path.to_str().unwrap().to_string());
+                    let new_ref = Ref::from_file(path.to_str().unwrap().to_string(), &repo);
+                    // let new_ref = Ref::new(path.to_str().unwrap().to_string());
                     result.push(new_ref);
                     Ok(())
                 }).unwrap();
