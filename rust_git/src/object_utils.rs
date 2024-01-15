@@ -68,12 +68,14 @@ pub fn object_read(repo: &Repository, sha: String) -> Result<GitObject, &'static
 ///
 /// Can be undone via the object_read function
 pub fn object_write(obj: GitObject, repo_option: Option<&Repository>) -> Result<String, &'static str> {
+    // TODO: I could definitely have done this more nicely, in particular by actioning the other TODO in git_object.rs
+    //       about not having the 'inner types' of the GitObject enum and directly implementing the below traits
+    //       on the GitObject itself
     let data = match &obj {
         GitObject::Blob(blob) => blob.serialize(),
         GitObject::Commit(commit) => commit.serialize(),
         GitObject::Tree(tree) => tree.serialize(),
         GitObject::Tag(tag) => tag.serialize(),
-        _ => panic!("type unsupported")
     };
 
     let format = match &obj  {
@@ -81,7 +83,6 @@ pub fn object_write(obj: GitObject, repo_option: Option<&Repository>) -> Result<
         GitObject::Commit(_) => GitCommit::format_name(),
         GitObject::Tree(_) => GitTree::format_name(),
         GitObject::Tag(_) => GitTag::format_name(),
-        _ => panic!("type unsupported")
     };
 
     // todo: if we reserve with BytesMut::with_capacity(n) upfront we get better efficiency

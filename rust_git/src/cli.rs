@@ -2,13 +2,14 @@ use std::fs::{canonicalize, create_dir_all};
 use std::path::Path;
 use clap::{Parser, Subcommand};
 use crate::git_object::GitObject::Commit;
+use crate::git_object::{GitObject, GitTag};
 use crate::ignore::Ignore;
-use crate::object_utils::{object_find, object_read};
+use crate::object_utils::{object_find, object_read, object_write};
 use crate::refs::Ref;
 use crate::repository::Repository;
 
 #[derive(Parser)]
-#[command(author, version, about, long_about = None)]
+#[command(about, long_about = None)]
 struct Args {
     #[command(subcommand)]
     command: Option<Commands>
@@ -46,6 +47,14 @@ enum Commands {
         #[arg(help="Paths to check. Return paths that will be ignored")]
         paths: Vec<String>
     },
+    Tag {
+        #[arg(short = 'a', help="If set we create a tag object")]
+        store_true: bool,
+        #[arg(help="The new tags name")]
+        name: String,
+        #[arg(help="The object the new tag will point to", default_value = "HEAD")]
+        object: String
+    },
     ShowRef
 }
 
@@ -74,7 +83,8 @@ impl Cli {
             Commands::HashObject { object_type, object_path, write } => self.process_hash_object(object_type, object_path, write),
             Commands::Checkout { commit, path } => self.process_checkout(commit, path),
             Commands::ShowRef => self.process_show_ref(),
-            Commands::CheckIgnore { paths } => self.process_check_ignore(paths)
+            Commands::CheckIgnore { paths } => self.process_check_ignore(paths),
+            Commands::Tag { store_true, name, object } => self.process_tag(store_true, name, object)
         };
 
         match result {
@@ -160,5 +170,20 @@ impl Cli {
         }
 
         Ok(())
+    }
+
+    fn process_tag(&self, store_true: &bool, name: &String, object: &String) -> Result<(), &'static str> {
+        let repo = Repository::find(String::from("."), true).unwrap();
+
+        let tag = if *store_true {
+            GitTag::new_object(name.clone(), object.clone(), &repo)
+        } else {
+            GitTag::new_lightweight(name.clone(), object.clone(), &repo)
+        };
+
+        object_write(GitObject::Tag(tag), Some(&repo)).and_then(|sha| {
+            println!("Created tag with hash: {}", sha);
+            Ok(())
+        })
     }
 }
