@@ -96,6 +96,7 @@ impl Ref {
         }
 
         let path = repo_file(repo, vec![self.name.clone()], false).map_err(|e| e.to_string())?;
+        println!("Writing ref to: {:?}", path);
         serde_json::to_string(self)
             .map_err(|e| e.to_string())
             .and_then(|data| fs::write(path, data).or_else(|e| Err(e.to_string())))

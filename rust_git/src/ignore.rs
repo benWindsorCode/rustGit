@@ -2,9 +2,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 use glob::Pattern;
-use crate::git_object::GitObject;
 use crate::index::Index;
-use crate::object_utils::object_read;
 use crate::repository::Repository;
 
 #[derive(PartialEq, Debug)]
@@ -54,7 +52,7 @@ impl Ignore {
                     Ignore::new(vec![])
                 }
             }
-            Err(err) => Ignore::new(vec![])
+            Err(_err) => Ignore::new(vec![])
         }
     }
 
@@ -125,7 +123,7 @@ impl Ignore {
             }
         }
 
-        println!("Matches computed for {:?} are:{:?}", path.clone(), matches);
+        println!("Matches computed for {:?} are:{:?}", path, matches);
         let all_false = matches.iter().all(|x| !x.to_owned());
 
         if all_false {

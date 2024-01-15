@@ -4,7 +4,8 @@ use std::path::{Path, PathBuf};
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use crate::key_value_list_message::{KeyValuePairEntry, KeyValuePairKey, KeyValuePairList};
-use crate::object_utils::object_read;
+use crate::object_utils::{object_find, object_read, object_write};
+use crate::refs::{Ref, RefType};
 use crate::repository::Repository;
 
 /// The GitWriteable trait represents an object which can be serialised and deserialised.
@@ -32,6 +33,7 @@ pub trait GitWriteable<T: GitWriteable<T>> {
     fn deserialize(data: Bytes) -> T;
 }
 
+// TODO: I made these inner objects because I thought you couldnt impl for an enum but you can so... can probably remove those
 #[derive(Debug)]
 pub enum GitObject {
     Commit(GitCommit),
@@ -58,23 +60,27 @@ pub struct GitLeaf {
     pub sort_key: String
 }
 
-#[derive(Debug)]
-
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GitTag {
     data: GitTagData
 }
 
-#[derive(Debug)]
-
+#[derive(Serialize, Deserialize, Debug, Clone)]
 enum GitTagData {
     // Makes a commit with this data, fetches the sha of that and then creates a ref to that sha
+    // so ultimately its a 'ref to an object of type tag'
     Object {
-        object: String,
         tag: String,
+        // sha hash of object tagging
+        object: String,
         tagger: String,
     },
     // Ultimately just a ref to a commit/tree/blob
-    Lightweight(String)
+    Lightweight {
+        tag: String,
+        // sha hash of object tagging
+        object: String
+    }
 }
 
 #[derive(Debug)]
@@ -201,6 +207,66 @@ impl GitWriteable<GitTree> for GitTree {
     }
 
     fn deserialize(data: Bytes) -> GitTree {
+        serde_json::from_str(&String::from_utf8(data.to_vec()).unwrap()).unwrap()
+    }
+}
+
+impl GitTag {
+    pub fn new_lightweight(tag: String, object: String, repo: &Repository) -> Self {
+        let sha = object_find(repo, &object, &"".to_string(), true);
+
+        let data = GitTagData::Lightweight { tag, object: sha };
+        GitTag { data }
+    }
+
+    pub fn new_object(tag: String, object: String, repo: &Repository) -> Self {
+        let sha = object_find(repo, &object, &"".to_string(), true);
+
+        let data = GitTagData::Object { object: sha, tag, tagger: "rust_git <test@example.com>".to_string() };
+        GitTag { data }
+    }
+
+    pub fn write(&self, repo: &Repository) -> Result<(), String> {
+        match &self.data {
+            GitTagData::Object { tag, .. } => self.write_object(tag, repo),
+            GitTagData::Lightweight { tag, object } => self.write_lightweight(tag, object, repo)
+        }
+    }
+
+    fn write_object(&self, tag: &String, repo: &Repository) -> Result<(), String> {
+        object_write(GitObject::Tag(self.clone()), Some(repo))
+            .map_err(|e| e.into())
+            .and_then(|tag_sha| {
+                println!("Creating indirect tag {} to {}", tag, tag_sha);
+                let mut reference = Ref::new(format!("refs/tags/{}", tag));
+                reference.add_target(RefType::Direct(tag_sha.to_owned()));
+
+                reference.write(&repo)
+            })
+    }
+
+    fn write_lightweight(&self, tag: &String, object: &String, repo: &Repository) -> Result<(), String> {
+        let mut reference = Ref::new(format!("refs/tags/{}", tag));
+        reference.add_target(RefType::Direct(object.to_owned()));
+
+        reference.write(&repo)
+    }
+}
+
+impl GitWriteable<GitTag> for GitTag {
+    fn new() -> GitTag {
+        GitTag { data: GitTagData::Lightweight { tag: "".to_string(), object: "".to_string() } }
+    }
+
+    fn format_name() -> String {
+        "tag".to_string()
+    }
+
+    fn serialize(&self) -> Bytes {
+        Bytes::from(serde_json::to_string(self).unwrap())
+    }
+
+    fn deserialize(data: Bytes) -> GitTag {
         serde_json::from_str(&String::from_utf8(data.to_vec()).unwrap()).unwrap()
     }
 }

@@ -1,8 +1,6 @@
 use std::fs;
-use std::path::Component::ParentDir;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
-use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use crate::file_utils::repo_file;
 use crate::repository::Repository;

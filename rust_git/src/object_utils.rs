@@ -3,7 +3,7 @@ use std::path::Path;
 use bytes::{BufMut, Bytes, BytesMut};
 use sha1::{Digest, Sha1};
 use crate::file_utils::repo_file;
-use crate::git_object::{GitBlob, GitCommit, GitObject, GitTree, GitWriteable};
+use crate::git_object::{GitBlob, GitCommit, GitObject, GitTag, GitTree, GitWriteable};
 use crate::repository::Repository;
 
 /// Parse a git object given the sha hash of the file
@@ -72,6 +72,7 @@ pub fn object_write(obj: GitObject, repo_option: Option<&Repository>) -> Result<
         GitObject::Blob(blob) => blob.serialize(),
         GitObject::Commit(commit) => commit.serialize(),
         GitObject::Tree(tree) => tree.serialize(),
+        GitObject::Tag(tag) => tag.serialize(),
         _ => panic!("type unsupported")
     };
 
@@ -79,6 +80,7 @@ pub fn object_write(obj: GitObject, repo_option: Option<&Repository>) -> Result<
         GitObject::Blob(_) => GitBlob::format_name(),
         GitObject::Commit(_) => GitCommit::format_name(),
         GitObject::Tree(_) => GitTree::format_name(),
+        GitObject::Tag(_) => GitTag::format_name(),
         _ => panic!("type unsupported")
     };
 
@@ -107,6 +109,7 @@ pub fn object_write(obj: GitObject, repo_option: Option<&Repository>) -> Result<
     Ok(sha)
 }
 
+// TODO: format is allowed to be blank, make it optional?
 pub fn object_find(repo: &Repository, name: &String, format: &String, follow: bool) -> String {
     println!("Running object_find for {:?}, {} {} {}", repo, name, format, follow);
     name.to_owned()
