@@ -11,7 +11,6 @@ pub struct Repository {
     pub conf: Config
 }
 
-// TODO: write some tests here using tempdir https://docs.rs/tempdir/latest/tempdir/
 impl Repository {
     pub fn new(path: String, force: bool) -> Self {
         let is_dir = metadata(path.clone()).unwrap().is_dir();
@@ -93,7 +92,6 @@ impl Repository {
 
         // push off the .git
         path_obj.pop();
-
         // now we are at the parent
         path_obj.pop();
 
@@ -150,5 +148,41 @@ impl Repository {
         let file_name = repo_file(&self, vec![String::from("HEAD")], false)?;
 
         fs::write(file_name, "ref: refs/heads/master\n").or_else(|_| Err("Failed to write to HEAD file"))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use tempdir::TempDir;
+    use crate::repository::Repository;
+
+    #[test]
+    fn repo_create_new_and_find() {
+        let tmp_dir = TempDir::new("dummy_repo").unwrap();
+        let tmp_dir_string: String = tmp_dir.path().to_str().unwrap().into();
+
+        // initialise an empty repo in the temp dir
+        let repo = Repository::create(tmp_dir_string.clone());
+        println!("Created test repo: {:?} in {:?}", repo, tmp_dir);
+        assert!(repo.is_ok());
+
+        // load that repo
+        let repo_2 = Repository::new(tmp_dir_string.clone(), false);
+        println!("Found repo: {:?}", repo_2);
+        assert_eq!(repo_2.worktree, repo.unwrap().worktree);
+
+        // search for that repo from the root dir
+        let repo_3 = Repository::find(tmp_dir_string.clone(), true);
+        assert!(repo_3.is_ok());
+        assert_eq!(repo_3.unwrap().worktree, repo_2.worktree);
+
+        // search for that repo from an inner dir
+        let inner_dir = tmp_dir.path().join(".git/refs/heads");
+        let inner_dir_string: String = inner_dir.as_path().to_str().unwrap().into();
+        let repo_4 = Repository::find(inner_dir_string.clone(), true);
+        assert!(repo_4.is_ok());
+        assert_eq!(repo_4.unwrap().worktree, repo_2.worktree);
+
+        tmp_dir.close().unwrap();
     }
 }

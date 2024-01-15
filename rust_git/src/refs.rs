@@ -13,7 +13,7 @@ pub struct Ref {
     pub target: Option<RefType>
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum RefType {
 
     // The hash of an object
@@ -133,5 +133,52 @@ impl Ref {
             .unwrap();
 
         return read_ref.target.unwrap()
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use bytes::Bytes;
+    use tempdir::TempDir;
+    use crate::git_object::{GitBlob, GitObject, GitWriteable};
+    use crate::object_utils::object_write;
+    use crate::refs::{Ref, RefType};
+    use crate::repository::Repository;
+
+    #[test]
+    fn ref_create_and_resolve() {
+        let tmp_dir = TempDir::new("dummy_repo").unwrap();
+        let tmp_dir_string: String = tmp_dir.path().to_str().unwrap().into();
+
+        // initialise an empty repo in the temp dir
+        let repo = Repository::create(tmp_dir_string.clone()).unwrap();
+
+        let blob_1 = GitBlob::deserialize(Bytes::from("First file of commit"));
+        let obj_1 = GitObject::Blob(blob_1);
+        let sha_1 = object_write(obj_1, Some(&repo)).unwrap();
+
+        let mut reference = Ref::new("refs/heads/main".to_string());
+        reference.add_target(RefType::Direct(sha_1.to_string()));
+
+        let ref_write = reference.write(&repo);
+        println!("ref write result: {:?}", ref_write);
+        assert!(ref_write.is_ok());
+
+        // Now resolve the reference
+        let reference_resolve = Ref::new("refs/heads/main".to_string());
+        let resolution = reference_resolve.fully_resolve(&repo);
+        assert_eq!(resolution, RefType::Direct(sha_1.clone()));
+
+        // create an indirect reference to the original reference
+        let mut reference_indirect = Ref::new("refs/heads/other".to_string());
+        reference_indirect.add_target(RefType::Indirect("refs/heads/main".to_string()));
+        let ref_write_indirect = reference_indirect.write(&repo);
+        assert!(ref_write_indirect.is_ok());
+
+        // We now resolve the indirect reference:
+        //        refs/heads/other -> refs/heads/main -> blob_1 hash from above
+        let resolution_indirect = reference_indirect.fully_resolve(&repo);
+        assert_eq!(resolution_indirect, RefType::Direct(sha_1.clone()));
     }
 }

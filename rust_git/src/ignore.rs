@@ -105,6 +105,8 @@ impl Ignore {
     ///
     /// let result_1 = ignore.check_ignore("my/file/name.txt".to_string());
     /// let expected_1 = None;
+    ///
+    /// assert_eq!(result_1, expected_1);
     /// ```
     pub fn check_ignore(&self, path: String) -> Option<bool> {
         let path = Path::new(&path);
