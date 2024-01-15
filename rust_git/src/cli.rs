@@ -2,6 +2,7 @@ use std::fs::{canonicalize, create_dir_all};
 use std::path::Path;
 use clap::{Parser, Subcommand};
 use crate::git_object::GitObject::Commit;
+use crate::ignore::Ignore;
 use crate::object_utils::{object_find, object_read};
 use crate::refs::Ref;
 use crate::repository::Repository;
@@ -41,6 +42,10 @@ enum Commands {
         #[arg(help="The EMPTY directory to checkout to")]
         path: String
     },
+    CheckIgnore {
+        #[arg(help="Paths to check. Return paths that will be ignored")]
+        paths: Vec<String>
+    },
     ShowRef
 }
 
@@ -68,7 +73,8 @@ impl Cli {
             Commands::CatFile { object_type, object_name } => self.process_cat_file(object_type, object_name),
             Commands::HashObject { object_type, object_path, write } => self.process_hash_object(object_type, object_path, write),
             Commands::Checkout { commit, path } => self.process_checkout(commit, path),
-            Commands::ShowRef => self.process_show_ref()
+            Commands::ShowRef => self.process_show_ref(),
+            Commands::CheckIgnore { paths } => self.process_check_ignore(paths)
         };
 
         match result {
@@ -136,6 +142,21 @@ impl Cli {
         for item in refs {
             let resolution = item.fully_resolve(&repo);
             println!("Ref: {}, Target: {:?}, resolves to {:?}", item.name, item.target, resolution);
+        }
+
+        Ok(())
+    }
+
+    fn process_check_ignore(&self, paths: &Vec<String>) -> Result<(), &'static str> {
+        let repo = Repository::find(String::from("."), true).unwrap();
+        let ignore = Ignore::read(&repo);
+
+        for path in paths {
+            if let Some(result) = ignore.check_ignore(path.clone()) {
+                if result {
+                    println!("{}", path);
+                }
+            }
         }
 
         Ok(())

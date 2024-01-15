@@ -1,6 +1,8 @@
 # rustGit
 A git clone written in rust following the Python tutorial 'Write yourself a Git!' https://wyag.thb.lt/#intro 
 
+Note: the above tutorial was designed to work interoperably with git, so that all internal file formats matched exactly how git stores its data. I did NOT follow that convention so internal files produced by my git clone are not interoperable with the standard git tooling, instead I use serde for (de)serialisation etc. as my goal was to produce my own clone of git rather than a program that is interoperable with git
+
 # Usage
 From cargo you can pass arguments, e.g.
 ```bash
