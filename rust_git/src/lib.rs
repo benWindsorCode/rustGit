@@ -6,3 +6,4 @@ pub mod cli;
 pub mod git_object;
 pub mod key_value_list_message;
 pub mod refs;
+pub mod index;

@@ -60,10 +60,24 @@ pub struct GitLeaf {
 
 #[derive(Debug)]
 
-pub struct GitTag {}
+pub struct GitTag {
+    data: GitTagData
+}
 
 #[derive(Debug)]
 
+enum GitTagData {
+    // Makes a commit with this data, fetches the sha of that and then creates a ref to that sha
+    Object {
+        object: String,
+        tag: String,
+        tagger: String,
+    },
+    // Ultimately just a ref to a commit/tree/blob
+    Lightweight(String)
+}
+
+#[derive(Debug)]
 pub struct GitBlob {
     pub data: Option<Bytes>
 }

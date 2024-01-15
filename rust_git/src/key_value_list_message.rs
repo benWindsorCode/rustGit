@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use bytes::Bytes;
 
+// TODO: Dont do any of this custom serialisation work and just use serde...
+
 /// Git configs are made up of a custom (de)serialisable key value pair structure
 /// see https://wyag.thb.lt/#org860ffdc from the 'Write You A Git' tutorial
 ///

@@ -11,6 +11,7 @@ pub struct Repository {
     pub conf: Config
 }
 
+// TODO: write some tests here using tempdir https://docs.rs/tempdir/latest/tempdir/
 impl Repository {
     pub fn new(path: String, force: bool) -> Self {
         let is_dir = metadata(path.clone()).unwrap().is_dir();
