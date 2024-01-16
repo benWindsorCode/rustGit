@@ -6,7 +6,7 @@ use crate::git_object::GitObject::Commit;
 use crate::git_object::{GitObject, GitTag};
 use crate::ignore::Ignore;
 use crate::index::Index;
-use crate::object_utils::{object_find, object_read, object_write};
+use crate::object_utils::{object_find, object_read, object_write, tree_to_dict};
 use crate::refs::Ref;
 use crate::repository::Repository;
 
@@ -90,7 +90,7 @@ impl Cli {
             Commands::CheckIgnore { paths } => self.process_check_ignore(paths),
             Commands::Tag { store_true, name, object } => self.process_tag(store_true, name, object),
             Commands::LsFiles => self.process_ls_files(),
-            Commands::Status => self.process_status()
+            Commands::Status => self.process_status().map_err(|_| "failed status")
         };
 
         match result {
@@ -207,13 +207,42 @@ impl Cli {
         Ok(())
     }
 
-    fn process_status(&self) -> Result<(), &'static str> {
+    fn process_status(&self) -> Result<(), String> {
         let repo = Repository::find(String::from("."), true)?;
 
         if let Some(branch) = branch_get_active(&repo) {
             println!("Active branch: {}", branch);
+        } else {
+            println!("HEAD detached at {}", object_find(&repo, &"HEAD".to_string(), &"".to_string(), true));
         }
+
+        self.print_status_head_index(&repo)?;
 
         Ok(())
     }
+
+    fn print_status_head_index(&self, repo: &Repository) -> Result<(), String> {
+        let index = Index::read(&repo)?;
+        let mut head = tree_to_dict(&repo, &"HEAD".to_string(), None);
+
+        for entry in index.entries {
+            if head.contains_key(&entry.name) {
+                if head.get(&entry.name).unwrap() != &entry.sha {
+                    println!("\tmodified: {}", entry.name);
+                }
+
+                head.remove(&entry.name);
+            } else {
+                println!("\tadded: {}", entry.name);
+            }
+        }
+
+        for entry in head.keys() {
+            println!("\tdeleted: {}", entry);
+        }
+
+        Ok(())
+
+    }
+
 }

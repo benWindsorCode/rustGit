@@ -49,7 +49,7 @@ pub struct GitCommit {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GitTree {
-    items: Vec<GitLeaf>
+    pub items: Vec<GitLeaf>
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

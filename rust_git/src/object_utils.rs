@@ -1,5 +1,6 @@
+use std::collections::HashMap;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use bytes::{BufMut, Bytes, BytesMut};
 use regex::Regex;
 use sha1::{Digest, Sha1};
@@ -153,4 +154,33 @@ fn object_resolve(repo: &Repository, name: String) -> Vec<String> {
     todo!("Implement reference resolution");
 
     candidates
+}
+
+pub fn tree_to_dict(repo: &Repository, name: &String, prefix: Option<&'static str>) -> HashMap<String, String> {
+    let mut ret = HashMap::new();
+
+    let tree_sha = object_find(&repo, name, &"tree".to_string(), true);
+    let tree = match object_read(&repo, tree_sha) {
+        Ok(GitObject::Tree(obj)) => obj,
+        _ => return ret
+    };
+
+    for leaf in tree.items {
+        let mut path_items = vec![];
+        if let Some(prefix_str) = prefix {
+            path_items.push(prefix_str);
+        }
+        path_items.push(&leaf.path);
+
+        let mut path = PathBuf::new();
+        for item in path_items {
+            path.push(item);
+        }
+
+        // TODO: add subtree support per here https://wyag.thb.lt/#org154db98
+
+        ret.insert(path.as_path().to_str().unwrap().into(), leaf.sha);
+    }
+
+    ret
 }
