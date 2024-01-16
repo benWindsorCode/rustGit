@@ -22,12 +22,12 @@ use crate::repository::Repository;
 ///
 /// Once the type is determined we can deserialize the data into an instance of GitObject
 /// via its GitWriteable trait implementation
-pub fn object_read(repo: &Repository, sha: String) -> Result<GitObject, &'static str> {
+pub fn object_read(repo: &Repository, sha: String) -> Result<GitObject, String> {
     let file = repo_file(&repo, vec![String::from("objects"), String::from(&sha[..2]), String::from(&sha[2..])], false)?;
     let path = Path::new(&file);
 
     if !path.is_file() {
-        return Err("Directory not file");
+        return Err("Directory not file".to_string());
     }
 
     let bytes = Bytes::from(fs::read(path).unwrap());
@@ -48,7 +48,7 @@ pub fn object_read(repo: &Repository, sha: String) -> Result<GitObject, &'static
     let data = &rest.as_ref()[size_loc_index+1..];
 
     if size != data.len() {
-        return Err("Data did not pass size validation");
+        return Err("Data did not pass size validation".to_string());
     }
 
     match std::str::from_utf8(format) {
@@ -58,9 +58,9 @@ pub fn object_read(repo: &Repository, sha: String) -> Result<GitObject, &'static
         Ok(other) => {
             // TODO: work out how to get the 'other' string into the Err message without issues of 'value referencing data owned by the current function'
             println!("ERROR: unable to parse format: {}", other);
-            Err("Unable to parse format, see logs for details")
+            Err("Unable to parse format, see logs for details".to_string())
         },
-        _ => Err("Unable to parse format")
+        _ => Err("Unable to parse format".to_string())
     }
 }
 
@@ -70,7 +70,7 @@ pub fn object_read(repo: &Repository, sha: String) -> Result<GitObject, &'static
 /// [format][space char][object size][null byte][data]
 ///
 /// Can be undone via the object_read function
-pub fn object_write(obj: GitObject, repo_option: Option<&Repository>) -> Result<String, &'static str> {
+pub fn object_write(obj: GitObject, repo_option: Option<&Repository>) -> Result<String, String> {
     // TODO: I could definitely have done this more nicely, in particular by actioning the other TODO in git_object.rs
     //       about not having the 'inner types' of the GitObject enum and directly implementing the below traits
     //       on the GitObject itself

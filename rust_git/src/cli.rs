@@ -90,7 +90,7 @@ impl Cli {
             Commands::CheckIgnore { paths } => self.process_check_ignore(paths),
             Commands::Tag { store_true, name, object } => self.process_tag(store_true, name, object),
             Commands::LsFiles => self.process_ls_files(),
-            Commands::Status => self.process_status().map_err(|_| "failed status")
+            Commands::Status => self.process_status()
         };
 
         match result {
@@ -99,36 +99,36 @@ impl Cli {
         }
     }
 
-    fn process_init(&self, path: &String) -> Result<(), &'static str> {
+    fn process_init(&self, path: &String) -> Result<(), String> {
         println!("Running init on: {}", path.clone());
         Repository::create(path.clone()).and_then(|_| Ok(()))
     }
 
-    fn process_cat_file(&self, object_type: &String, object_name: &String) -> Result<(), &'static str> {
+    fn process_cat_file(&self, object_type: &String, object_name: &String) -> Result<(), String> {
         println!("Running cat file on {} {}", object_type.clone(), object_name.clone());
 
-        let repo = Repository::find(String::from("."), true).unwrap();
+        let repo = Repository::find(String::from("."), true)?;
         let obj_name = object_find(&repo, &object_name, &object_type, true);
-        let obj = object_read(&repo, obj_name).unwrap();
+        let obj = object_read(&repo, obj_name)?;
 
         println!("{:?}", obj);
         Ok(())
     }
 
-    fn process_hash_object(&self, object_type: &String, object_path: &String, write: &bool) -> Result<(), &'static str> {
+    fn process_hash_object(&self, object_type: &String, object_path: &String, write: &bool) -> Result<(), String> {
         todo!("Hash object cli not implemented yet, called for {} {} {}", object_type, object_path, write);
     }
 
-    pub fn process_checkout(&self, commit: &String, path: &String) -> Result<(), &'static str> {
+    pub fn process_checkout(&self, commit: &String, path: &String) -> Result<(), String> {
         let path_obj = Path::new(path);
 
         if path_obj.exists() {
             if !path_obj.is_dir() {
-                return Err("Not a directory");
+                return Err("Not a directory".to_string());
             }
 
             if !path_obj.read_dir().unwrap().next().is_none() {
-                return Err("Directory not empty");
+                return Err("Directory not empty".to_string());
             }
         } else {
             create_dir_all(path_obj).unwrap();
@@ -138,21 +138,21 @@ impl Cli {
 
         // TODO: technically this should support directly checking out a tree too but...
         let commit_obj_name = object_find(&repo, &commit, &"commit".to_string(), true);
-        let commit_obj = match object_read(&repo, commit_obj_name).unwrap() {
+        let commit_obj = match object_read(&repo, commit_obj_name)? {
             Commit(obj) => obj,
             _ => {
-                return Err("Object not a commit");
+                return Err("Object not a commit".to_string());
             }
         };
 
-        let tree_obj = commit_obj.get_and_read_tree(&repo).unwrap();
+        let tree_obj = commit_obj.get_and_read_tree(&repo)?;
         tree_obj.checkout(&repo, canonicalize(path_obj).unwrap().as_path());
 
         Ok(())
     }
 
-    fn process_show_ref(&self) -> Result<(), &'static str> {
-        let repo = Repository::find(String::from("."), true).unwrap();
+    fn process_show_ref(&self) -> Result<(), String> {
+        let repo = Repository::find(String::from("."), true)?;
         let refs = Ref::all_refs(&repo);
 
         for item in refs {
@@ -163,8 +163,8 @@ impl Cli {
         Ok(())
     }
 
-    fn process_check_ignore(&self, paths: &Vec<String>) -> Result<(), &'static str> {
-        let repo = Repository::find(String::from("."), true).unwrap();
+    fn process_check_ignore(&self, paths: &Vec<String>) -> Result<(), String> {
+        let repo = Repository::find(String::from("."), true)?;
         let ignore = Ignore::read(&repo);
 
         for path in paths {
@@ -178,7 +178,7 @@ impl Cli {
         Ok(())
     }
 
-    fn process_tag(&self, store_true: &bool, name: &String, object: &String) -> Result<(), &'static str> {
+    fn process_tag(&self, store_true: &bool, name: &String, object: &String) -> Result<(), String> {
         let repo = Repository::find(String::from("."), true).unwrap();
 
         let tag = if *store_true {
@@ -193,7 +193,7 @@ impl Cli {
         })
     }
 
-    fn process_ls_files(&self) -> Result<(), &'static str> {
+    fn process_ls_files(&self) -> Result<(), String> {
         let repo = Repository::find(String::from("."), true)?;
         // TODO: would be nice to use '?' op here but struggling to convert Err String to Err &'static str
         //       do I need a pass over whole codebase to unify errors to be String instead? could be much nicer

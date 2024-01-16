@@ -115,7 +115,7 @@ impl KeyValuePairList {
     /// let expected_data = KeyValuePairList { data: expected_data_inner, key_list: vec![key1, key2, KeyValuePairKey::Contents] };
     /// assert_eq!(output, expected_data);
     /// ```
-    pub fn from(input: Bytes) -> Result<Self, &'static str> {
+    pub fn from(input: Bytes) -> Result<Self, String> {
         // let mut data: HashMap<String, KeyValuePairEntry> = HashMap::new();
         let mut data = KeyValuePairList::new();
 
@@ -132,7 +132,7 @@ impl KeyValuePairList {
             match (space_idx, newline_idx) {
                 (None, Some(newline)) => {
                     if newline != start {
-                        return Err("Newline and start incompatible");
+                        return Err("Newline and start incompatible".to_string());
                     }
 
                     data.insert_contents(input_remaining.slice(start+1..));
@@ -140,7 +140,7 @@ impl KeyValuePairList {
                 },
                 (Some(space), Some(newline)) if newline < space => {
                     if newline != start {
-                        return Err("Newline and start incompatible");
+                        return Err("Newline and start incompatible".to_string());
                     }
 
                     data.insert_contents(input_remaining.slice(start+1..));

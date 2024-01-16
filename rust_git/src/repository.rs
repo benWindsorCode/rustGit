@@ -47,7 +47,7 @@ impl Repository {
         repository
     }
 
-    pub fn create(path: String) -> Result<Self, &'static str> {
+    pub fn create(path: String) -> Result<Self, String> {
         let repo = Repository::new(path, true);
 
         let worktree = Path::new(&repo.worktree);
@@ -55,11 +55,11 @@ impl Repository {
 
         if worktree.exists() {
             if !worktree.is_dir() {
-                return Err("Path is not a directory");
+                return Err("Path is not a directory".to_string());
             }
 
             if gitdir.exists() && !gitdir.read_dir().unwrap().next().is_none() {
-                return Err("Path is not empty")
+                return Err("Path is not empty".to_string())
             }
         } else {
             create_dir_all(worktree).unwrap();
@@ -73,7 +73,7 @@ impl Repository {
         Ok(repo)
     }
 
-    pub fn find(path: String, required: bool) -> Result<Self, &'static str> {
+    pub fn find(path: String, required: bool) -> Result<Self, String> {
 
         // TODO: this is a hack to handle '.' base case/edge case, implement relative paths here as the Path/PathBuf doesnt
         //         I suspect I need to use this https://doc.rust-lang.org/std/fs/fn.canonicalize.html
@@ -101,7 +101,7 @@ impl Repository {
             if required {
                 panic!("No git directory.")
             } else {
-                return Err("Couldnt locate git directory in path")
+                return Err("Couldnt locate git directory in path".to_string())
             }
         }
 
@@ -136,19 +136,16 @@ impl Repository {
         Ok(())
     }
 
-    fn create_description(&self) -> Result<(), &'static str> {
+    fn create_description(&self) -> Result<(), String> {
         let file_name = repo_file(&self, vec![String::from("description")], false)?;
 
-        fs::write(file_name, "Unnamed repository; edit this file 'description' to name the repository.\n").or_else(|e| {
-            println!("{:?}", e);
-            Err("Failed to create description")
-        })
+        fs::write(file_name, "Unnamed repository; edit this file 'description' to name the repository.\n").or_else(|e| Err(e.to_string()))
     }
 
-    fn create_head(&self) -> Result<(), &'static str> {
+    fn create_head(&self) -> Result<(), String> {
         let file_name = repo_file(&self, vec![String::from("HEAD")], false)?;
 
-        fs::write(file_name, "ref: refs/heads/master\n").or_else(|_| Err("Failed to write to HEAD file"))
+        fs::write(file_name, "ref: refs/heads/master\n").or_else(|e| Err(e.to_string()))
     }
 
     /// Given a list of paths, remove their entries from the index if

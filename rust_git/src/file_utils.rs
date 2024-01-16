@@ -45,10 +45,10 @@ pub fn repo_dir(repository: &Repository, path: Vec<String>, mkdir: bool) -> Opti
 }
 
 /// Given a repository and a path inside the gitdir, create the path to file if it doesnt exist
-pub fn repo_file(repository: &Repository, path: Vec<String>, mkdir: bool) -> Result<String, &'static str> {
+pub fn repo_file(repository: &Repository, path: Vec<String>, mkdir: bool) -> Result<String, String> {
     path.split_last().and_then(|(_, rest)| {
         repo_dir(&repository, rest.to_vec(), mkdir)
     }).and_then(|_| {
         Some(repo_path(&repository, path))
-    }).ok_or("Failed to run repo_file")
+    }).ok_or("Failed to run repo_file".to_string())
 }

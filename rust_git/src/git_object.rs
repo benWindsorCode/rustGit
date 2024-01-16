@@ -137,13 +137,13 @@ impl GitCommit {
         }
     }
 
-    pub fn get_and_read_tree(&self, repo: &Repository) -> Result<GitTree, &'static str> {
+    pub fn get_and_read_tree(&self, repo: &Repository) -> Result<GitTree, String> {
         self.get_tree_string()
-            .ok_or("Tree not found")
+            .ok_or("Tree not found".to_string())
             .and_then(|tree_hash| object_read(&repo, tree_hash) )
             .and_then(|obj| match obj {
                 GitObject::Tree(tree) => Ok(tree),
-                _ => Err("Non tree object found")
+                _ => Err("Non tree object found".to_string())
             })
     }
 }

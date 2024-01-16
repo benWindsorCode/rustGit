@@ -28,21 +28,21 @@ impl Config {
         Config { path, contents: config_contents }
     }
 
-    pub fn write(&self) -> Result<(), &'static str> {
+    pub fn write(&self) -> Result<(), String> {
         let config_json = serde_json::to_string(&self.contents).unwrap();
-        fs::write(&self.path, config_json).or_else(|_| Err("Failed to write to config file"))
+        fs::write(&self.path, config_json).or_else(|e| Err(e.to_string()))
     }
 
-    pub fn read(&mut self) -> Result<(), &'static str> {
+    pub fn read(&mut self) -> Result<(), String> {
         let data = match fs::read_to_string(&self.path) {
             Ok(data) => data,
-            Err(_) => return Err("Failed to read config")
+            Err(_) => return Err("Failed to read config".to_string())
         };
 
         serde_json::from_str(data.as_str()).and_then(|contents| {
             self.contents = contents;
             Ok(())
-        }).or_else(|_| Err("unable to load config"))
+        }).or_else(|e| Err(e.to_string()))
     }
 }
 
