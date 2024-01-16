@@ -1,9 +1,11 @@
 use std::fs;
 use std::path::Path;
 use bytes::{BufMut, Bytes, BytesMut};
+use regex::Regex;
 use sha1::{Digest, Sha1};
 use crate::file_utils::repo_file;
 use crate::git_object::{GitBlob, GitCommit, GitObject, GitTag, GitTree, GitWriteable};
+use crate::refs::{Ref, RefType};
 use crate::repository::Repository;
 
 /// Parse a git object given the sha hash of the file
@@ -114,4 +116,41 @@ pub fn object_write(obj: GitObject, repo_option: Option<&Repository>) -> Result<
 pub fn object_find(repo: &Repository, name: &String, format: &String, follow: bool) -> String {
     println!("Running object_find for {:?}, {} {} {}", repo, name, format, follow);
     name.to_owned()
+}
+
+/// A watered down version of the full git resolution algorithm
+///
+/// Including support for 'short hashes', to reference a hash by the first 6 chars of the hash
+///
+/// From the object_find chapter: https://wyag.thb.lt/#object_find
+fn object_resolve(repo: &Repository, name: String) -> Vec<String> {
+    let mut candidates = Vec::new();
+
+
+    let trimmed = name.trim().to_owned();
+    if trimmed.is_empty() {
+        return candidates;
+    }
+
+    if trimmed == "HEAD" {
+        let resolved = Ref::new("HEAD".to_string()).fully_resolve(&repo);
+
+        let head_ref = match resolved {
+            RefType::Direct(head_ref) => head_ref,
+            _ => panic!("Couldnt resolve ref to head")
+        };
+
+        candidates.push(head_ref);
+        return candidates;
+    }
+
+    // If its a hex string, try to resolve
+    let hex_string_re = Regex::new(r"^[0-9A-Fa-f]{4,40}$").unwrap();
+    if hex_string_re.is_match(trimmed.as_str()) {
+        todo!("Implement hex string resolution");
+    }
+
+    todo!("Implement reference resolution");
+
+    candidates
 }

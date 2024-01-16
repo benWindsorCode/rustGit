@@ -8,3 +8,4 @@ pub mod key_value_list_message;
 pub mod refs;
 pub mod index;
 pub mod ignore;
+pub mod branch_utils;

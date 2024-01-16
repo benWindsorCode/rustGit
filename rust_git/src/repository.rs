@@ -3,6 +3,7 @@ use std::fs::{create_dir_all, metadata};
 use std::path::{Path, PathBuf};
 use crate::config::{Config, ConfigContents};
 use crate::file_utils::{repo_dir, repo_file};
+use crate::index::{Index, IndexEntry};
 
 #[derive(Debug)]
 pub struct Repository {
@@ -148,6 +149,26 @@ impl Repository {
         let file_name = repo_file(&self, vec![String::from("HEAD")], false)?;
 
         fs::write(file_name, "ref: refs/heads/master\n").or_else(|_| Err("Failed to write to HEAD file"))
+    }
+
+    /// Given a list of paths, remove their entries from the index if
+    /// present, optionally delete the files if specified
+    pub fn rm(&self, paths: Vec<String>, delete: bool, skip_missing: bool) {
+        let index = Index::read(&self);
+
+        todo!("Implement rm functionality")
+    }
+
+    pub fn add(&self, paths: Vec<String>, delete: bool, skip_missing: bool) {
+        self.rm(paths.clone(), delete.clone(), skip_missing.clone());
+
+        // TODO: Deal with the path cleaning
+
+        let index = Index::read(&self);
+
+        // TODO: use fs::metadata to get mtime etc. https://doc.rust-lang.org/std/fs/struct.Metadata.html
+        // let entry = IndexEntry::new()
+
     }
 }
 

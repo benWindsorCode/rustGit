@@ -8,7 +8,7 @@ use crate::repository::Repository;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Index {
     version: i32,
-    entries: Vec<IndexEntry>
+    pub entries: Vec<IndexEntry>
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -23,7 +23,8 @@ pub struct IndexEntry {
     pub model_perms: i32,
     pub uid: i32,
     pub gid: i32,
-    pub fsize: i32,
+    // Size of the object in bytes
+    pub fsize: u64,
     pub sha: String,
     pub flag_assume_valid: bool,
     pub flag_stage: bool,
@@ -33,8 +34,11 @@ pub struct IndexEntry {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum ModelType {
+    // b1000
     Regular,
+    // b1010
     Symlink,
+    // b1110
     Gitlink
 }
 
@@ -81,4 +85,28 @@ impl Index {
 }
 
 impl IndexEntry {
+    pub fn new(sha: String, path: String) -> Self {
+        let metadata = fs::metadata(Path::new(&path)).unwrap();
+
+        // For some definitions of these fields from the tutorial see https://www.gnu.org/software/libc/manual/html_node/Attribute-Meanings.html
+        IndexEntry {
+            time: metadata.created().unwrap(),
+            mtime: metadata.modified().unwrap(),
+            // TODO: platform specific https://doc.rust-lang.org/std/os/linux/fs/trait.MetadataExt.html#tymethod.st_dev
+            dev: "".to_string(),
+            // TODO: platform specific https://doc.rust-lang.org/std/os/linux/fs/trait.MetadataExt.html#tymethod.st_ino
+            ino: 0,
+            model_type: ModelType::Regular,
+            model_perms: 0o644,
+            // TODO: platform specific https://doc.rust-lang.org/std/os/linux/fs/trait.MetadataExt.html#tymethod.st_uid
+            uid: 0,
+            // TODO: platform specific https://doc.rust-lang.org/std/os/linux/fs/trait.MetadataExt.html#tymethod.st_gid
+            gid: 0,
+            fsize: metadata.len(),
+            sha,
+            flag_assume_valid: false,
+            flag_stage: false,
+            name: path,
+        }
+    }
 }

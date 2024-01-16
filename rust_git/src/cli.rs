@@ -1,9 +1,11 @@
 use std::fs::{canonicalize, create_dir_all};
 use std::path::Path;
 use clap::{Parser, Subcommand};
+use crate::branch_utils::branch_get_active;
 use crate::git_object::GitObject::Commit;
 use crate::git_object::{GitObject, GitTag};
 use crate::ignore::Ignore;
+use crate::index::Index;
 use crate::object_utils::{object_find, object_read, object_write};
 use crate::refs::Ref;
 use crate::repository::Repository;
@@ -55,7 +57,9 @@ enum Commands {
         #[arg(help="The object the new tag will point to", default_value = "HEAD")]
         object: String
     },
-    ShowRef
+    LsFiles,
+    ShowRef,
+    Status
 }
 
 pub struct Cli {
@@ -84,7 +88,9 @@ impl Cli {
             Commands::Checkout { commit, path } => self.process_checkout(commit, path),
             Commands::ShowRef => self.process_show_ref(),
             Commands::CheckIgnore { paths } => self.process_check_ignore(paths),
-            Commands::Tag { store_true, name, object } => self.process_tag(store_true, name, object)
+            Commands::Tag { store_true, name, object } => self.process_tag(store_true, name, object),
+            Commands::LsFiles => self.process_ls_files(),
+            Commands::Status => self.process_status()
         };
 
         match result {
@@ -185,5 +191,29 @@ impl Cli {
             println!("Created tag with hash: {}", sha);
             Ok(())
         })
+    }
+
+    fn process_ls_files(&self) -> Result<(), &'static str> {
+        let repo = Repository::find(String::from("."), true)?;
+        // TODO: would be nice to use '?' op here but struggling to convert Err String to Err &'static str
+        //       do I need a pass over whole codebase to unify errors to be String instead? could be much nicer
+        //       that way I can use e.into() or format!("{}", e) to convert err to String in many cases much more nicely
+        let index = Index::read(&repo).unwrap();
+
+        for entry in index.entries {
+            println!("{:?}", entry);
+        }
+
+        Ok(())
+    }
+
+    fn process_status(&self) -> Result<(), &'static str> {
+        let repo = Repository::find(String::from("."), true)?;
+
+        if let Some(branch) = branch_get_active(&repo) {
+            println!("Active branch: {}", branch);
+        }
+
+        Ok(())
     }
 }
