@@ -134,7 +134,7 @@ impl Cli {
             create_dir_all(path_obj).unwrap();
         }
 
-        let repo = Repository::find(String::from("."), true).unwrap();
+        let repo = Repository::find(String::from("."), true)?;
 
         // TODO: technically this should support directly checking out a tree too but...
         let commit_obj_name = object_find(&repo, &commit, &"commit".to_string(), true);
@@ -179,7 +179,7 @@ impl Cli {
     }
 
     fn process_tag(&self, store_true: &bool, name: &String, object: &String) -> Result<(), String> {
-        let repo = Repository::find(String::from("."), true).unwrap();
+        let repo = Repository::find(String::from("."), true)?;
 
         let tag = if *store_true {
             GitTag::new_object(name.clone(), object.clone(), &repo)
@@ -198,7 +198,7 @@ impl Cli {
         // TODO: would be nice to use '?' op here but struggling to convert Err String to Err &'static str
         //       do I need a pass over whole codebase to unify errors to be String instead? could be much nicer
         //       that way I can use e.into() or format!("{}", e) to convert err to String in many cases much more nicely
-        let index = Index::read(&repo).unwrap();
+        let index = Index::read(&repo)?;
 
         for entry in index.entries {
             println!("{:?}", entry);

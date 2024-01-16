@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fs;
+use std::num::ParseIntError;
 use std::path::{Path, PathBuf};
 use bytes::{BufMut, Bytes, BytesMut};
 use regex::Regex;
@@ -42,7 +43,7 @@ pub fn object_read(repo: &Repository, sha: String) -> Result<GitObject, String> 
     // TODO: handle the unwrap here more elegantly?
     // Get the size as bytes, turn it into the right char, and parse this into a usize
     let size_raw = &rest.as_ref()[..size_loc_index];
-    let size: usize = String::from_utf8(size_raw.to_vec()).unwrap().parse().unwrap();
+    let size: usize = String::from_utf8(size_raw.to_vec()).unwrap().parse().or_else(|e: ParseIntError| Err(e.to_string()))?;
 
     // Add 1 to account for the null byte
     let data = &rest.as_ref()[size_loc_index+1..];
@@ -105,7 +106,7 @@ pub fn object_write(obj: GitObject, repo_option: Option<&Repository>) -> Result<
         let path_obj = Path::new(&path);
 
         if !path_obj.exists() {
-            fs::write(path, output_data).unwrap();
+            fs::write(path, output_data).or_else(|e| Err(e.to_string()))?;
         }
 
     }

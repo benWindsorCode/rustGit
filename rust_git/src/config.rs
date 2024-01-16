@@ -29,7 +29,7 @@ impl Config {
     }
 
     pub fn write(&self) -> Result<(), String> {
-        let config_json = serde_json::to_string(&self.contents).unwrap();
+        let config_json = serde_json::to_string(&self.contents).or_else(|e| Err(e.to_string()))?;
         fs::write(&self.path, config_json).or_else(|e| Err(e.to_string()))
     }
 
