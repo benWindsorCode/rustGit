@@ -5,13 +5,13 @@ use serde::{Deserialize, Serialize};
 use crate::file_utils::repo_file;
 use crate::repository::Repository;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Index {
     version: i32,
     pub entries: Vec<IndexEntry>
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct IndexEntry {
     // TODO: is this the right way to store time?
     pub time: SystemTime,
@@ -32,7 +32,7 @@ pub struct IndexEntry {
     pub name: String
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum ModelType {
     // b1000
     Regular,
@@ -108,5 +108,39 @@ impl IndexEntry {
             flag_stage: false,
             name: path,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use tempdir::TempDir;
+    use crate::index::{Index, IndexEntry};
+    use crate::repository::Repository;
+
+    #[test]
+    fn index_write_and_read() {
+        let tmp_dir = TempDir::new("dummy_repo").unwrap();
+        let tmp_dir_string: String = tmp_dir.path().to_str().unwrap().into();
+
+        // initialise an empty repo in the temp dir
+        let repo = Repository::create(tmp_dir_string.clone());
+        println!("Created test repo: {:?} in {:?}", repo, tmp_dir);
+        assert!(repo.is_ok());
+        let repo = repo.unwrap();
+
+        let mut index = Index::new();
+
+        let dummy_file_path = tmp_dir.path().join("some_file.txt");
+        fs::write(dummy_file_path.clone(), "dummy contents").unwrap();
+        index.add_entry(IndexEntry::new("testsha".to_string(), dummy_file_path.as_path().to_str().unwrap().into()));
+
+        let index_write_result = index.write(&repo);
+        assert!(index_write_result.is_ok());
+
+        let index_read = Index::read(&repo);
+        assert!(index_read.is_ok());
+
+        assert_eq!(index, index_read.unwrap());
     }
 }
