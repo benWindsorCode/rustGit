@@ -52,3 +52,29 @@ pub fn repo_file(repository: &Repository, path: Vec<String>, mkdir: bool) -> Res
         Some(repo_path(&repository, path))
     }).ok_or("Failed to run repo_file".to_string())
 }
+
+#[cfg(test)]
+mod test {
+    use std::env::temp_dir;
+    use std::path::{Path, PathBuf};
+    use tempdir::TempDir;
+    use crate::file_utils::repo_path;
+    use crate::repository::Repository;
+
+    #[test]
+    fn test_repo_path() {
+        let tmp_dir = TempDir::new("dummy_repo").unwrap();
+        let tmp_dir_string: String = tmp_dir.path().to_str().unwrap().into();
+
+        // initialise an empty repo in the temp dir
+        let repo = Repository::create(tmp_dir_string.clone());
+        println!("Created test repo: {:?} in {:?}", repo, tmp_dir);
+        assert!(repo.is_ok());
+
+        let path = repo_path(&repo.unwrap(), vec!["first".to_string(), "second".to_string()]);
+
+        let mut expected = PathBuf::from(tmp_dir_string);
+        expected.push(Path::new(".git/first/second"));
+        assert_eq!(Path::new(&path), expected.as_path())
+    }
+}
