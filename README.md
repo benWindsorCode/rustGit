@@ -21,3 +21,7 @@ cargo run -- init "C:\\Users\\benja\\Documents\\code\\my_git_test"
 
 For ease of use if using intellij to run/test the best option is to create run configs for each of the files in the src/bin directory.
 From here you can then *set the working dir of the run config to be the git dir you want to work in* to help test.
+# TODO
+- add CICD/rust test runs and a status badge https://kerkour.com/rust-github-actions-ci-cd
+- improve error handling
+- simplify GitObject nested type

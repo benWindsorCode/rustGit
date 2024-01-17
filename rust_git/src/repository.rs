@@ -3,7 +3,7 @@ use std::fs::{create_dir_all, metadata};
 use std::path::{Path, PathBuf};
 use crate::config::{Config, ConfigContents};
 use crate::file_utils::{repo_dir, repo_file};
-use crate::index::{Index, IndexEntry};
+use crate::index::Index;
 
 #[derive(Debug)]
 pub struct Repository {

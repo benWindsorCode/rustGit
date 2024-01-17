@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use bytes::{BufMut, Bytes, BytesMut};
 use regex::Regex;
 use sha1::{Digest, Sha1};
-use crate::file_utils::repo_file;
+use crate::file_utils::{repo_dir, repo_file};
 use crate::git_object::{GitBlob, GitCommit, GitObject, GitTag, GitTree, GitWriteable};
 use crate::refs::{Ref, RefType};
 use crate::repository::Repository;
@@ -149,9 +149,22 @@ fn object_resolve(repo: &Repository, name: String) -> Vec<String> {
     // If its a hex string, try to resolve
     let hex_string_re = Regex::new(r"^[0-9A-Fa-f]{4,40}$").unwrap();
     if hex_string_re.is_match(trimmed.as_str()) {
-        todo!("Implement hex string resolution");
+        let name = trimmed.to_lowercase();
+        let (prefix, rem) = name.split_at(2);
+
+        let path = repo_dir(&repo, vec!["objects".to_string(), prefix.to_string()], false);
+
+        if path.is_some() {
+            for path in fs::read_dir(path.unwrap()).unwrap() {
+                let path_str = path.unwrap().file_name().to_str().unwrap().to_string();
+                if path_str.starts_with(rem) {
+                    candidates.push(format!("{}{}", prefix, path_str));
+                }
+            }
+        }
     }
 
+    // todo https://wyag.thb.lt/#org38de95c
     todo!("Implement reference resolution");
 
     candidates

@@ -64,7 +64,6 @@ mod test {
     #[test]
     fn config_write_read() {
         let tmp_dir = TempDir::new("dummy_repo").unwrap();
-        let tmp_dir_string: String = tmp_dir.path().to_str().unwrap().into();
         let dummy_file_path = tmp_dir.path().join("some_file.txt");
         let dummy_file_path = dummy_file_path.as_path().to_str().unwrap().to_string();
 

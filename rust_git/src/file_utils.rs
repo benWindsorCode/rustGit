@@ -55,7 +55,6 @@ pub fn repo_file(repository: &Repository, path: Vec<String>, mkdir: bool) -> Res
 
 #[cfg(test)]
 mod test {
-    use std::env::temp_dir;
     use std::path::{Path, PathBuf};
     use tempdir::TempDir;
     use crate::file_utils::repo_path;
