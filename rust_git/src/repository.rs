@@ -13,11 +13,11 @@ pub struct Repository {
 }
 
 impl Repository {
-    pub fn new(path: String, force: bool) -> Self {
+    pub fn new(path: String, force: bool) ->Result<Self, String> {
         let is_dir = metadata(path.clone()).unwrap().is_dir();
 
         if !is_dir {
-            panic!("{} is not a directory", path.clone());
+            return Err(format!("{} is not a directory", path.clone()));
         }
 
         let path_obj = Path::new(&path);
@@ -29,14 +29,14 @@ impl Repository {
             conf: Config::new(String::from(""))
         };
 
-        let config_file = repo_file(&repository, vec![String::from("config")], false).unwrap();
+        let config_file = repo_file(&repository, vec![String::from("config")], false)?;
         let mut config = Config::new(config_file.clone());
 
         let config_path = Path::new(&config_file);
         if config_path.exists() {
-            config.read().unwrap();
+            config.read()?;
         } else if !force {
-            panic!("Configuration file missing");
+            return Err("Configuration file missing".to_string());
         }
 
         if !force {
@@ -44,11 +44,11 @@ impl Repository {
         }
 
         repository.conf = config;
-        repository
+        Ok(repository)
     }
 
     pub fn create(path: String) -> Result<Self, String> {
-        let repo = Repository::new(path, true);
+        let repo = Repository::new(path, true)?;
 
         let worktree = Path::new(&repo.worktree);
         let gitdir = Path::new(&repo.gitdir);
@@ -88,7 +88,7 @@ impl Repository {
         path_obj.push(".git");
 
         if path_obj.is_dir() {
-            return Ok(Repository::new(path_to_search.clone(), false))
+            return Repository::new(path_to_search.clone(), false)
         };
 
         // push off the .git
@@ -174,21 +174,21 @@ mod tests {
         assert!(repo.is_ok());
 
         // load that repo
-        let repo_2 = Repository::new(tmp_dir_string.clone(), false);
-        println!("Found repo: {:?}", repo_2);
-        assert_eq!(repo_2.worktree, repo.unwrap().worktree);
+        let repo_2 = Repository::new(tmp_dir_string.clone(), false).unwrap();
+        let repo_2_worktree = repo_2.worktree;
+        assert_eq!(repo_2_worktree.clone(), repo.unwrap().worktree);
 
         // search for that repo from the root dir
         let repo_3 = Repository::find(tmp_dir_string.clone(), true);
         assert!(repo_3.is_ok());
-        assert_eq!(repo_3.unwrap().worktree, repo_2.worktree);
+        assert_eq!(repo_3.unwrap().worktree, repo_2_worktree.clone());
 
         // search for that repo from an inner dir
         let inner_dir = tmp_dir.path().join(".git/refs/heads");
         let inner_dir_string: String = inner_dir.as_path().to_str().unwrap().into();
         let repo_4 = Repository::find(inner_dir_string.clone(), true);
         assert!(repo_4.is_ok());
-        assert_eq!(repo_4.unwrap().worktree, repo_2.worktree);
+        assert_eq!(repo_4.unwrap().worktree, repo_2_worktree.clone());
 
         tmp_dir.close().unwrap();
     }
