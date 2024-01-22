@@ -131,7 +131,7 @@ impl Cli {
                 return Err("Directory not empty".to_string());
             }
         } else {
-            create_dir_all(path_obj).unwrap();
+            create_dir_all(path_obj).map_err(|e| e.to_string())?;
         }
 
         let repo = Repository::find(String::from("."), true)?;

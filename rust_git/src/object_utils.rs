@@ -31,7 +31,8 @@ pub fn object_read(repo: &Repository, sha: String) -> Result<GitObject, String> 
         return Err("Directory not file".to_string());
     }
 
-    let bytes = Bytes::from(fs::read(path).unwrap());
+    let bytes_raw = fs::read(path).map_err(|e| e.to_string())?;
+    let bytes = Bytes::from(bytes_raw);
 
     let format_loc_index = bytes.iter().position(|&b| b == b' ').ok_or("Couldnt locate format locator byte")?;
     let format = &bytes.as_ref()[..format_loc_index];
