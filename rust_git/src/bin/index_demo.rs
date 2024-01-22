@@ -2,7 +2,6 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::SystemTime;
 use bytes::Bytes;
-use rust_git::file_utils::repo_path;
 use rust_git::git_object::{GitBlob, GitObject};
 use rust_git::index::{Index, IndexEntry, ModelType};
 use rust_git::object_utils::object_write;

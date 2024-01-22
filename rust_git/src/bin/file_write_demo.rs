@@ -4,7 +4,6 @@ use rust_git::object_utils::object_write;
 use rust_git::repository::Repository;
 
 fn main() {
-    Repository::find(String::from("."), true);
     let repo = Repository::find(String::from("C:\\Users\\benja\\Documents\\code\\my_git_test"), false).unwrap();
     println!("Repo opened - worktree '{}'\ngitdir '{}'\nconfig '{:?}'", repo.worktree, repo.gitdir, repo.conf.contents);
 

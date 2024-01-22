@@ -202,7 +202,7 @@ impl GitWriteable<GitTree> for GitTree {
     }
 
     fn serialize(&self) -> Bytes {
-        // TODO: sort by leaf keys before serialize
+        // TODO: sort by leaf keys before serialize to ensure hash of file with same keys is always the same
         Bytes::from(serde_json::to_string(self).unwrap())
     }
 

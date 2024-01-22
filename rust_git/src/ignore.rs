@@ -51,7 +51,7 @@ impl Ignore {
                 } else {
                     Ignore::new(vec![])
                 }
-            }
+            },
             Err(_err) => Ignore::new(vec![])
         }
     }

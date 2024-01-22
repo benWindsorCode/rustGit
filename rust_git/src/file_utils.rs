@@ -26,7 +26,6 @@ pub fn repo_path(repository: &Repository, path: Vec<String>) -> String {
 /// Given a repo and a path to a dir inside the gitdir, create the directory if it doesnt exist
 pub fn repo_dir(repository: &Repository, path: Vec<String>, mkdir: bool) -> Result<String, String> {
     let path_name = repo_path(repository, path);
-
     let path_obj = Path::new(&path_name);
 
     if path_obj.exists() {
@@ -46,7 +45,7 @@ pub fn repo_dir(repository: &Repository, path: Vec<String>, mkdir: bool) -> Resu
 
 /// Given a repository and a path inside the gitdir, create the path to file if it doesnt exist
 pub fn repo_file(repository: &Repository, path: Vec<String>, mkdir: bool) -> Result<String, String> {
-    path.split_last().ok_or("couldnt split".to_string()).and_then(|(_, rest)| {
+    path.split_last().ok_or("couldnt split path".to_string()).and_then(|(_, rest)| {
         repo_dir(&repository, rest.to_vec(), mkdir)
     }).and_then(|_| {
         Ok(repo_path(&repository, path))
@@ -65,7 +64,6 @@ mod test {
         let tmp_dir = TempDir::new("dummy_repo").unwrap();
         let tmp_dir_string: String = tmp_dir.path().to_str().unwrap().into();
 
-        // initialise an empty repo in the temp dir
         let repo = Repository::create(tmp_dir_string.clone());
         println!("Created test repo: {:?} in {:?}", repo, tmp_dir);
         assert!(repo.is_ok());

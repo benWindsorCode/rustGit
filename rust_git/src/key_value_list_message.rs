@@ -47,17 +47,7 @@ impl KeyValuePairList {
         let key = KeyValuePairKey::Key(key_string);
         if self.data.contains_key(&key) {
             let val = self.data.get(&key).unwrap();
-
-            let updated_val = match val {
-                KeyValuePairEntry::Singleton(singleton_val) => {
-                    KeyValuePairEntry::List(vec![singleton_val.clone(), val_to_add])
-                },
-                KeyValuePairEntry::List(list_val) => {
-                    let mut list_val_to_update = list_val.clone();
-                    list_val_to_update.push(val_to_add);
-                    KeyValuePairEntry::List(list_val_to_update)
-                }
-            };
+            let updated_val = KeyValuePairList::create_list_from_entry(val, val_to_add);
             self.data.insert(key, updated_val);
         } else {
             self.data.insert(key.clone(), KeyValuePairEntry::Singleton(val_to_add));
@@ -65,7 +55,21 @@ impl KeyValuePairList {
         }
     }
 
-    ///
+    /// Given an existing value and a value to add, we need to transform the existing value to
+    /// ensure the output is now a list entry (as the existing value can be list or singleton)
+    fn create_list_from_entry(existing_val: &KeyValuePairEntry, val_to_add: Bytes) -> KeyValuePairEntry {
+        match existing_val {
+            KeyValuePairEntry::Singleton(singleton_val) => {
+                KeyValuePairEntry::List(vec![singleton_val.clone(), val_to_add])
+            },
+            KeyValuePairEntry::List(list_val) => {
+                let mut list_val_to_update = list_val.clone();
+                list_val_to_update.push(val_to_add);
+                KeyValuePairEntry::List(list_val_to_update)
+            }
+        }
+    }
+
     /// Parse key value pairs from input data.
     ///
     /// New lines separate entries.
@@ -228,10 +232,7 @@ impl KeyValuePairList {
     /// let expected = "firstkey firstvalue\n continued first value\nsecondkey secondvalue\n\nand now the contents\n";
     /// assert_eq!(output, expected);
     /// ```
-    ///
-    ///
     pub fn into_string(&self) -> String {
-        // TODO: the implementation needs to be ordered on insertion order ideally to preserve the output every time
         let mut output = String::from("");
 
         for key in &self.key_list {

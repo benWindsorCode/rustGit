@@ -57,7 +57,6 @@ impl Ref {
             file.path().strip_prefix(Path::new(&repo.gitdir))
                 .and_then(|path| {
                     let new_ref = Ref::from_file(path.to_str().unwrap().to_string(), &repo);
-                    // let new_ref = Ref::new(path.to_str().unwrap().to_string());
                     result.push(new_ref);
                     Ok(())
                 }).unwrap();
@@ -68,7 +67,7 @@ impl Ref {
 
     pub fn add_target(&mut self, target: RefType) {
         match target {
-            RefType::Indirect(indirect_name) if indirect_name == self.name => panic!("Cannot have a ref indirect ref itself"),
+            RefType::Indirect(indirect_name) if indirect_name == self.name => panic!("Cannot have a ref be an indirect ref to itself"),
             _ => {}
         }
 
@@ -84,8 +83,7 @@ impl Ref {
 
     pub fn is_broken_or_empty_ref(&self) -> bool {
         match self.target {
-            Some(RefType::Broken) => true,
-            None => true,
+            Some(RefType::Broken) | None => true,
             _ => false
         }
     }

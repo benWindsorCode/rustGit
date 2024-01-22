@@ -128,7 +128,6 @@ pub fn object_find(repo: &Repository, name: &String, format: &String, follow: bo
 fn object_resolve(repo: &Repository, name: String) -> Vec<String> {
     let mut candidates = Vec::new();
 
-
     let trimmed = name.trim().to_owned();
     if trimmed.is_empty() {
         return candidates;
