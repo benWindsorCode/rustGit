@@ -2,10 +2,12 @@ use std::fs;
 use crate::file_utils::repo_file;
 use crate::repository::Repository;
 
+const HEAD_REF: &str = "ref: refs/heads/";
+
 pub fn branch_get_active(repo: &Repository) -> Option<String> {
     get_head_contents(&repo).and_then(|head_contents| {
-        if head_contents.starts_with("ref: refs/heads/") {
-            head_contents.strip_prefix("ref: refs/heads/")
+        if head_contents.starts_with(HEAD_REF) {
+            head_contents.strip_prefix(HEAD_REF)
                 .ok_or("Unable to remove head prefix".to_owned())
                 .map(|contents| contents.trim().to_owned())
         } else {

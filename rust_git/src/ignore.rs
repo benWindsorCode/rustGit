@@ -76,15 +76,10 @@ impl Ignore {
     pub fn parse_file(lines: Vec<String>) -> Self {
         let mut rules = Vec::new();
         for line in lines {
-            let rule = IgnoreRule::from_string(line);
-
-            match rule {
-                IgnoreRule::Comment(_) => continue,
-                IgnoreRule::Empty => continue,
-                _ => {}
+            match IgnoreRule::from_string(line) {
+                IgnoreRule::Empty | IgnoreRule::Comment(_) => continue,
+                rule @ _ => rules.push(rule)
             }
-
-            rules.push(rule);
         }
 
         Ignore { rules }
@@ -119,9 +114,7 @@ impl Ignore {
                     let pattern = Pattern::new(&rule);
                     matches.push(pattern.unwrap().matches_path(&path));
                 },
-                IgnoreRule::Negate(_) => {},
-                IgnoreRule::Literal(_) => {},
-                _ => continue
+                IgnoreRule::Negate(_) | IgnoreRule::Literal(_) | IgnoreRule::Comment(_) | IgnoreRule::Empty => {},
             }
         }
 

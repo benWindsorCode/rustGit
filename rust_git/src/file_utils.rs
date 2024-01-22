@@ -30,10 +30,10 @@ pub fn repo_dir(repository: &Repository, path: Vec<String>, mkdir: bool) -> Resu
     let path_obj = Path::new(&path_name);
 
     if path_obj.exists() {
-        if path_obj.is_dir() {
-            return Ok(String::from(path_obj.to_str().unwrap()));
+        return if path_obj.is_dir() {
+            Ok(String::from(path_obj.to_str().unwrap()))
         } else {
-            return Err(format!("{} not a directory", path_name.clone()));
+            Err(format!("{} not a directory", path_name.clone()))
         }
     }
 

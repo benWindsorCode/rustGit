@@ -248,7 +248,6 @@ impl GitTag {
     fn write_lightweight(&self, tag: &String, object: &String, repo: &Repository) -> Result<(), String> {
         let mut reference = Ref::new(format!("refs/tags/{}", tag));
         reference.add_target(RefType::Direct(object.to_owned()));
-
         reference.write(&repo)
     }
 }
