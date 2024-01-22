@@ -154,7 +154,7 @@ fn object_resolve(repo: &Repository, name: String) -> Vec<String> {
 
         let path = repo_dir(&repo, vec!["objects".to_string(), prefix.to_string()], false);
 
-        if path.is_some() {
+        if path.is_ok() {
             for path in fs::read_dir(path.unwrap()).unwrap() {
                 let path_str = path.unwrap().file_name().to_str().unwrap().to_string();
                 if path_str.starts_with(rem) {

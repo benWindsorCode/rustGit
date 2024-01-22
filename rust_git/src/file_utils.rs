@@ -24,33 +24,33 @@ pub fn repo_path(repository: &Repository, path: Vec<String>) -> String {
 }
 
 /// Given a repo and a path to a dir inside the gitdir, create the directory if it doesnt exist
-pub fn repo_dir(repository: &Repository, path: Vec<String>, mkdir: bool) -> Option<String> {
+pub fn repo_dir(repository: &Repository, path: Vec<String>, mkdir: bool) -> Result<String, String> {
     let path_name = repo_path(repository, path);
 
     let path_obj = Path::new(&path_name);
 
     if path_obj.exists() {
         if path_obj.is_dir() {
-            return Some(String::from(path_obj.to_str().unwrap()));
+            return Ok(String::from(path_obj.to_str().unwrap()));
         } else {
-            panic!("{} is not a directory", path_name.clone());
+            return Err(format!("{} not a directory", path_name.clone()));
         }
     }
 
     if mkdir {
-        create_dir_all(path_obj).unwrap();
+        create_dir_all(path_obj).map_err(|e| e.to_string())?
     }
 
-    Some(String::from(path_obj.to_str().unwrap()))
+    Ok(String::from(path_obj.to_str().unwrap()))
 }
 
 /// Given a repository and a path inside the gitdir, create the path to file if it doesnt exist
 pub fn repo_file(repository: &Repository, path: Vec<String>, mkdir: bool) -> Result<String, String> {
-    path.split_last().and_then(|(_, rest)| {
+    path.split_last().ok_or("couldnt split".to_string()).and_then(|(_, rest)| {
         repo_dir(&repository, rest.to_vec(), mkdir)
     }).and_then(|_| {
-        Some(repo_path(&repository, path))
-    }).ok_or("Failed to run repo_file".to_string())
+        Ok(repo_path(&repository, path))
+    })
 }
 
 #[cfg(test)]

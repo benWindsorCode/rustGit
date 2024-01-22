@@ -116,22 +116,11 @@ impl Repository {
         }
     }
 
-    fn create_dirs(&self) -> Result<(), &'static str> {
-        if repo_dir(&self, vec![String::from("branches")], true).is_none() {
-            return Err("Couldnt create branches dir");
-        }
-
-        if repo_dir(&self, vec![String::from("objects")], true).is_none() {
-            return Err("Couldnt create objects dir");
-        }
-
-        if repo_dir(&self, vec![String::from("refs"), String::from("tags")], true).is_none() {
-            return Err("Couldnt create ./refs/tags dir");
-        }
-
-        if repo_dir(&self, vec![String::from("refs"), String::from("heads")], true).is_none() {
-            return Err("Couldnt create ./refs/heads dir");
-        }
+    fn create_dirs(&self) -> Result<(), String> {
+        repo_dir(&self, vec![String::from("branches")], true)?;
+        repo_dir(&self, vec![String::from("objects")], true)?;
+        repo_dir(&self, vec![String::from("refs"), String::from("tags")], true)?;
+        repo_dir(&self, vec![String::from("refs"), String::from("heads")], true)?;
 
         Ok(())
     }

@@ -6,7 +6,7 @@ Note: the above tutorial was designed to work interoperably with git, so that al
 The below is a very very brief summary of the excellent information from: https://wyag.thb.lt/
 
 Git is made up of a few core under the hood components:
-- custom storage of files via their sha1 hash (where the has is split into the first two chars and remainder, the first two chars are used as the folder name and the remainder is used as the file name)
+- custom storage of files via their sha1 hash (where the hash is split into the first two chars and remainder, the first two chars are used as the folder name and the remainder is used as the file name)
 - references which are objects which either point directly to a hash or indirectly to another reference
 - trees which are made up of leaves each ultimately pointing to the hash of an object. The tree itself then has its own hash which we can reference. Hence a tree is the core way we group versions of a file. When you do a git checkout you can checkout a tree directly or checkout a commit which ultimately will point to a tree
 - indexes ...
